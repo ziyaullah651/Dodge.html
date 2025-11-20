@@ -1,0 +1,1 @@
+const c=document.getElementById('game');const x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;let y=0;function loop(){y+=5;if(y>c.height)y=0;x.fillStyle='black';x.fillRect(0,0,c.width,c.height);x.fillStyle='red';x.fillRect(c.width/2-25,c.height-150,50,100);requestAnimationFrame(loop);}loop();
