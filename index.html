@@ -1,507 +1,246 @@
 <!doctype html>
+<!-- Simple HTML Game: Avoider
+     - Single-file HTML + JS
+     - Controls: Arrow keys / WASD or touch/drag on mobile
+     - Objective: Avoid falling enemies, score increases with time
+     - Features: Responsive, pause, restart, high-score saved in localStorage
+-->
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover" />
-  <title>CarRacer — HTML5 Racing Game</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simple Avoider Game</title>
   <style>
-    :root{--bg:#0b1220;--panel:rgba(255,255,255,0.06);--accent:#ff6b01}
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071025,#0b1220);font-family:Inter,system-ui,Arial}
-    #app{display:flex;flex-direction:column;height:100%;gap:8px}
-    header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;color:#e6eef8}
+    :root{--bg:#0b1220;--card:#0f1724;--accent:#6ee7b7;--danger:#ff6b6b}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial}
+    body{display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#071028 0%,#081029 100%);color:#e6eef8}
+    .wrap{width:min(920px,96vw);max-width:920px;margin:20px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
     h1{font-size:18px;margin:0}
-    .controls-row{display:flex;gap:8px;align-items:center}
-    .btn{background:var(--panel);border:1px solid rgba(255,255,255,0.04);color:#e6eef8;padding:8px 10px;border-radius:10px;cursor:pointer}
-    .btn.primary{background:linear-gradient(90deg,var(--accent),#ff8a3c);border:none;color:#08101a}
-
-    main{flex:1;display:flex;align-items:stretch;gap:10px;padding:10px}
-    #game-wrap{flex:1;position:relative;border-radius:12px;overflow:hidden;background:#081021;display:flex}
-    canvas{width:100%;height:100%;display:block}
-
-    aside{width:320px;max-width:40%;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;padding:12px;color:#cfe6ff}
-    .panel{background:rgba(255,255,255,0.02);padding:10px;border-radius:10px;margin-bottom:10px}
-    label{display:block;font-size:12px;color:#bcd9ff;margin-bottom:6px}
-    select,input{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf4ff}
-    .small{font-size:12px;color:#9fbbe6}
-    .hud{position:absolute;left:10px;top:10px;color:#eaf4ff;backdrop-filter:blur(6px);background:rgba(3,6,12,0.3);padding:8px;border-radius:10px}
-
-    /* touch controls */
-    .touch-ctr{position:absolute;right:12px;bottom:12px;display:flex;gap:8px;flex-direction:column}
-    .touch-row{display:flex;gap:8px}
-    .touch-btn{width:64px;height:64px;border-radius:12px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;font-weight:700;color:#e6eef8}
-
-    /* modal */
-    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,4,8,0.6);z-index:30}
-    .card{width:360px;background:#071021;padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
-    .muted{color:#8fb1da;font-size:13px}
-
-    footer{padding:8px 12px;color:#9fbbe6;font-size:13px}
-
-    @media (max-width:900px){aside{display:none}header h1{font-size:14px}.card{width:92%}}
+    .ui{display:flex;gap:8px;align-items:center}
+    button{background:var(--card);border:1px solid rgba(255,255,255,0.06);color:inherit;padding:8px 10px;border-radius:8px;cursor:pointer}
+    button:active{transform:translateY(1px)}
+    canvas{display:block;width:100%;border-radius:10px;box-shadow:0 8px 30px rgba(2,6,23,0.7);background:linear-gradient(180deg,#071428,#00121a)}
+    .info{display:flex;gap:12px;align-items:center;font-size:14px;margin-top:8px}
+    .badge{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px}
+    .controls{font-size:13px;color:rgba(230,238,248,0.8)}
+    footer{margin-top:10px;font-size:12px;color:rgba(230,238,248,0.6)}
+    @media (max-width:480px){h1{font-size:16px}}
   </style>
 </head>
 <body>
-  <div id="app">
+  <div class="wrap">
     <header>
-      <h1>CarRacer — HTML5 Canvas Racing</h1>
-      <div class="controls-row">
-        <div class="small">Logged in as: <span id="usernameDisplay">Guest</span></div>
-        <button class="btn" id="loginBtn">Login / Register</button>
-        <button class="btn" id="saveBtn">Save</button>
-        <button class="btn primary" id="startBtn">Start Race</button>
+      <h1>Simple Avoider — dodge the falling blocks</h1>
+      <div class="ui">
+        <button id="startBtn">Start</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="restartBtn">Restart</button>
       </div>
     </header>
 
-    <main>
-      <div id="game-wrap">
-        <canvas id="gameCanvas" width="1280" height="720"></canvas>
-        <div class="hud" id="hud">
-          <div>Lap: <span id="lap">0</span>/<span id="lapsTotal">3</span></div>
-          <div>Speed: <span id="speed">0</span> km/h</div>
-          <div>Level: <span id="levelDisplay">1</span></div>
-        </div>
-        <div class="touch-ctr" id="touchControls" style="display:none">
-          <div class="touch-row"><div class="touch-btn" id="accel">▲</div></div>
-          <div class="touch-row"><div class="touch-btn" id="left">◀</div><div class="touch-btn" id="brake">■</div><div class="touch-btn" id="right">▶</div></div>
-        </div>
-      </div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-      <aside>
-        <div class="panel">
-          <label>Choose Car</label>
-          <select id="carSelect">
-            <option value="red">Red Falcon</option>
-            <option value="blue">Blue Vortex</option>
-            <option value="lime">Lime Striker</option>
-          </select>
-        </div>
-
-        <div class="panel">
-          <label>Choose Map</label>
-          <select id="mapSelect">
-            <option value="classic">Classic Oval</option>
-            <option value="coast">Coastal Twist</option>
-            <option value="city">City Circuit</option>
-          </select>
-        </div>
-
-        <div class="panel">
-          <label>Level / Difficulty</label>
-          <select id="levelSelect">
-            <option value="1">Level 1 — Practice</option>
-            <option value="2">Level 2 — Pro</option>
-            <option value="3">Level 3 — Expert</option>
-          </select>
-        </div>
-
-        <div class="panel">
-          <label>Controls</label>
-          <div class="small">Keyboard: ← → accelerate: Up / W / Space / Touch buttons on mobile. Tilt supported on modern phones.</div>
-        </div>
-
-        <div class="panel">
-          <label>Save / Load</label>
-          <div style="display:flex;gap:8px">
-            <button class="btn" id="loadBtn">Load</button>
-            <button class="btn" id="resetBtn">Reset Save</button>
-          </div>
-        </div>
-
-        <div class="panel">
-          <label>About</label>
-          <div class="muted">This is a single-file HTML5 racing demo. Login and saves are stored locally on your device (localStorage). For secure multi-user features, use a server backend.</div>
-        </div>
-      </aside>
-    </main>
-
-    <footer>Tip: Rotate device to landscape for best experience on mobile. Press <kbd>F11</kbd> on desktop to enter fullscreen.</footer>
-  </div>
-
-  <!-- Login / Register Modal -->
-  <div id="loginModal" class="modal" style="display:none">
-    <div class="card">
-      <h3>Login / Register</h3>
-      <div style="margin-top:8px">
-        <label>Username</label>
-        <input id="loginName" placeholder="Your name" />
-        <label style="margin-top:8px">Password</label>
-        <input id="loginPass" type="password" placeholder="Password (local only)" />
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn primary" id="doLogin">Login</button>
-          <button class="btn" id="doRegister">Register</button>
-          <button class="btn" id="closeModal">Close</button>
-        </div>
-        <div class="muted" style="margin-top:8px">Note: This demo stores credentials in your browser localStorage (not secure). Use a server for production.</div>
-      </div>
+    <div class="info">
+      <div class="badge">Score: <span id="score">0</span></div>
+      <div class="badge">High: <span id="highScore">0</span></div>
+      <div class="controls">Controls: Arrow keys / WASD — or drag on touch</div>
     </div>
+
+    <footer>Touch and drag to move the player on mobile. The game saves the high score locally.</footer>
   </div>
 
-  <script>
-  // --- Utilities ---
-  const $ = sel => document.querySelector(sel);
-  const qs = (sel,root=document)=>[...root.querySelectorAll(sel)];
-
-  // Simple client-side user store (localStorage). Not secure - for demo only.
-  const UserStore = {
-    key: '__car_racer_users_v1',
-    async hash(pw){
-      // use SubtleCrypto to hash password (async)
-      if(!window.crypto || !crypto.subtle) return btoa(pw);
-      const enc = new TextEncoder().encode(pw);
-      const hash = await crypto.subtle.digest('SHA-256', enc);
-      return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
-    },
-    async load(){
-      const raw = localStorage.getItem(this.key);
-      return raw ? JSON.parse(raw) : {};
-    },
-    async save(users){ localStorage.setItem(this.key, JSON.stringify(users)); },
-    async register(name,password){
-      const users = await this.load();
-      if(users[name]) return {ok:false, msg:'User exists'};
-      users[name] = {hash: await this.hash(password), created: Date.now()};
-      await this.save(users);
-      return {ok:true};
-    },
-    async login(name,password){
-      const users = await this.load();
-      const u = users[name];
-      if(!u) return {ok:false, msg:'User not found'};
-      const h = await this.hash(password);
-      if(h === u.hash) return {ok:true};
-      return {ok:false, msg:'Incorrect password'};
-    }
-  };
-
-  // --- Game core ---
-  const canvas = $('#gameCanvas');
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  let W = canvas.width, H = canvas.height;
 
-  // Resize handling to keep crispness
-  function resizeCanvas(){
-    const ratio = window.devicePixelRatio||1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = Math.max(600, Math.floor(rect.width * ratio));
-    canvas.height = Math.max(320, Math.floor(rect.height * ratio));
-    W = canvas.width; H = canvas.height;
+  // UI
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const scoreEl = document.getElementById('score');
+  const highScoreEl = document.getElementById('highScore');
+
+  // Game state
+  let w = canvas.width, h = canvas.height;
+  let running = false, paused = false;
+  let lastTime = 0, spawnAcc = 0;
+  let score = 0, highScore = 0;
+
+  const STORAGE_KEY = 'simpleAvoiderHighScore_v1';
+  highScore = Number(localStorage.getItem(STORAGE_KEY) || 0);
+  highScoreEl.textContent = highScore;
+
+  function resizeCanvas() {
+    // Keep internal resolution and scale to css size to preserve crispness
+    const ratio = Math.min(1.5, window.devicePixelRatio || 1);
+    const cssW = Math.min(920, window.innerWidth * 0.96);
+    const cssH = Math.round(cssW * 0.625);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    w = canvas.width = Math.round(cssW * ratio);
+    h = canvas.height = Math.round(cssH * ratio);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(ratio, ratio);
   }
-  new ResizeObserver(resizeCanvas).observe(canvas);
+  window.addEventListener('resize', resizeCanvas, {passive:true});
   resizeCanvas();
 
-  // Tracks defined as centerlines with width
-  const Tracks = {
-    classic(){
-      // Oval-like path using parametric points
-      const pts=[]; for(let t=0;t<1;t+=0.01){
-        const a = t*Math.PI*2;
-        const x = 0.5 + 0.35*Math.cos(a);
-        const y = 0.5 + 0.25*Math.sin(a);
-        pts.push([x,y]);
-      }
-      return {pts, width:0.18, laps:3, name:'Classic Oval'};
-    },
-    coast(){
-      // twisty coastline
-      const pts=[]; for(let t=0;t<1;t+=0.008){
-        const a = t* Math.PI*4 - Math.sin(t*6)*0.6;
-        const x = 0.1 + 0.8*t + Math.sin(a)*0.06;
-        const y = 0.5 + Math.cos(a)*0.24 * Math.sin(t*Math.PI);
-        pts.push([x,y]);
-      }
-      return {pts, width:0.16, laps:2, name:'Coastal Twist'};
-    },
-    city(){
-      const pts=[]; for(let t=0;t<1;t+=0.01){
-        const x = 0.5 + 0.38*Math.cos(t*Math.PI*2) + 0.12*Math.cos(t*5);
-        const y = 0.5 + 0.32*Math.sin(t*Math.PI*2) + 0.08*Math.sin(t*3);
-        pts.push([x,y]);
-      }
-      return {pts, width:0.20, laps:4, name:'City Circuit'};
-    }
-  };
+  // Player
+  const player = {x: w/4, y: h - 80, r: 18, speed: 6, vx:0, vy:0, color:'#6ee7b7'};
 
-  // Car definitions (simple SVG shapes drawn on canvas)
-  const CarDefs = {
-    red: {color:'#ff4d4d', maxSpeed:420, accel:220, handling:3.5},
-    blue:{color:'#4d8bff', maxSpeed:460, accel:240, handling:3.2},
-    lime:{color:'#9cff4d', maxSpeed:480, accel:260, handling:2.9}
-  };
+  // Enemies
+  const enemies = [];
 
-  // Player state
-  const Game = {
-    running:false,
-    level:1,
-    mapKey:'classic',
-    carKey:'red',
-    lapsToDo:3,
-    lap:0,
-    position:0, // parameter along track [0,1)
-    speed:0, // arbitrary units -> convert to km/h for HUD
-    angle:0,
-    throttle:false,
-    brake:false,
-    steer:0, // -1..1
-    username:'Guest',
-    saveKey(){ return `racer_save_${this.username}`; }
-  };
-
-  // Interaction
-  let keys = {};
-  window.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()] = true; if(['f11'].includes(e.key.toLowerCase())) e.preventDefault(); });
-  window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()] = false; });
-
-  // touch buttons
-  function setupTouch(){
-    const tc = $('#touchControls');
-    const toggle = () => tc.style.display = (/Mobi|Android/i.test(navigator.userAgent) ? 'flex':'none');
-    toggle(); window.addEventListener('resize', toggle);
-    ['accel','brake','left','right'].forEach(id=>{
-      const el = $('#'+id);
-      el.addEventListener('touchstart', e=>{ e.preventDefault(); keys[id]=true; });
-      el.addEventListener('touchend', e=>{ e.preventDefault(); keys[id]=false; });
-    });
-    // Device tilt
-    if(window.DeviceOrientationEvent){
-      window.addEventListener('deviceorientation', e=>{
-        if(e.gamma!==null){
-          const g = Math.max(-30, Math.min(30, e.gamma));
-          keys['tilt']=g/30; // -1..1
-        }
-      });
-    }
-  }
-  setupTouch();
-
-  // Helper: point on track by t (0..1)
-  function sampleTrack(track,t){
-    const n = track.pts.length;
-    const idx = t * n;
-    const i0 = Math.floor(idx) % n; const i1 = (i0+1)%n;
-    const f = idx - Math.floor(idx);
-    const a = track.pts[i0], b = track.pts[i1];
-    return [a[0]*(1-f)+b[0]*f, a[1]*(1-f)+b[1]*f];
+  function spawnEnemy() {
+    const size = 18 + Math.random()*36;
+    const x = 20 + Math.random()*( (w/ (window.devicePixelRatio||1)) - 40 - size );
+    const speed = 1.2 + Math.random()*3 + Math.min(4, score/50);
+    enemies.push({x, y: -size, w:size, h:size, speed});
   }
 
-  // Distance between two normalized points in canvas coordinates
-  function dist(a,b){ const dx=a[0]-b[0], dy=a[1]-b[1]; return Math.hypot(dx,dy); }
+  // Input handling (keyboard & pointer)
+  const keys = {};
+  window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+  window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
-  // Track rendering onto offscreen for performance
-  let trackCache = {};
-  function renderTrackToCache(key,track){
-    const cvs = document.createElement('canvas');
-    const ratio = window.devicePixelRatio||1; cvs.width = Math.floor(W); cvs.height = Math.floor(H);
-    const c = cvs.getContext('2d');
-    c.fillStyle = '#071020'; c.fillRect(0,0,cvs.width,cvs.height);
-    // Background texture
-    for(let i=0;i<200;i++){
-      c.fillStyle = `rgba(255,255,255,${(Math.random()*0.01)})`;
-      c.fillRect(Math.random()*cvs.width, Math.random()*cvs.height, 1,1);
-    }
-    // draw road center
-    c.save();
-    c.translate(cvs.width/2, cvs.height/2);
-    c.scale(cvs.width, cvs.height);
-    // road fill
-    c.beginPath();
-    const roadW = track.width;
-    // build left and right polygons by offsetting normals
-    const left=[]; const right=[];
-    for(let i=0;i<track.pts.length;i++){
-      const a = track.pts[i];
-      const b = track.pts[(i+1)%track.pts.length];
-      const tx = b[0]-a[0], ty=b[1]-a[1];
-      const len = Math.hypot(tx,ty) || 1; const nx = -ty/len, ny = tx/len; // normal
-      left.push([a[0]+nx*roadW/2, a[1]+ny*roadW/2]);
-      right.push([a[0]-nx*roadW/2, a[1]-ny*roadW/2]);
-    }
-    c.fillStyle = '#222831';
-    c.beginPath();
-    left.forEach((p,i)=> (i===0?c.moveTo(p[0],p[1]):c.lineTo(p[0],p[1])) );
-    for(let i=right.length-1;i>=0;i--) c.lineTo(right[i][0], right[i][1]);
-    c.closePath(); c.fill();
-    // lane marks
-    c.strokeStyle = 'rgba(255,255,255,0.15)'; c.lineWidth = 0.002;
-    for(let i=0;i<track.pts.length;i+=6){
-      const p = track.pts[i]; const q = track.pts[(i+1)%track.pts.length];
-      c.beginPath(); c.moveTo(p[0],p[1]); c.lineTo(q[0],q[1]); c.stroke();
-    }
-    c.restore();
-    trackCache[key] = cvs;
+  // Pointer for touch/mouse drag
+  let pointerDown = false;
+  function toLocal(e){
+    const rect = canvas.getBoundingClientRect();
+    const p = e.touches ? e.touches[0] : e;
+    return {x: (p.clientX - rect.left), y: (p.clientY - rect.top)};
   }
+  canvas.addEventListener('pointerdown', e => { pointerDown = true; const p = toLocal(e); player.x = p.x; player.y = p.y; });
+  window.addEventListener('pointermove', e => { if(pointerDown){ const p = toLocal(e); player.x = p.x; player.y = p.y; }});
+  window.addEventListener('pointerup', ()=> pointerDown = false);
 
-  // draw car as rotated rectangle with simple details
-  function drawCar(ctx,x,y,angle,carDef,scale=1){
-    ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
-    const w = 40*scale, h = 20*scale;
-    ctx.fillStyle = carDef.color; ctx.beginPath(); roundRect(ctx,-w/2,-h/2,w,h,6*scale); ctx.fill();
-    // windows
-    ctx.fillStyle = 'rgba(255,255,255,0.12)'; roundRect(ctx,-w/4,-h/2+2*scale,w/2,h/3,3*scale); ctx.fill();
-    // spoiler
-    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(-w/2, -h/2, w*0.12, h*0.25);
-    ctx.restore();
-  }
-  function roundRect(ctx,x,y,w,h,r){ ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); }
-
-  // convert normalized to canvas
-  function normToCanvas(p){ return [p[0]*W, p[1]*H]; }
-
-  // main loop
-  let last = performance.now();
-  function gameTick(now){
-    const dt = Math.min(0.05, (now-last)/1000); last = now;
-    update(dt);
-    render();
-    if(Game.running) requestAnimationFrame(gameTick);
+  // Simple collision: circle vs rect
+  function circleRectCollide(cx, cy, r, rx, ry, rw, rh){
+    const closestX = Math.max(rx, Math.min(cx, rx+rw));
+    const closestY = Math.max(ry, Math.min(cy, ry+rh));
+    const dx = cx - closestX, dy = cy - closestY;
+    return (dx*dx+dy*dy) < r*r;
   }
 
   function update(dt){
-    // input mapping
-    const steerInput = (keys['arrowleft']||keys['a']||keys['left']||keys['left']===true) ? -1 : ((keys['arrowright']||keys['d']||keys['right']||keys['right']===true)?1:0);
-    const accel = keys['arrowup']||keys['w']||keys[' ']==true||keys['accel']||keys['tilt']>0 ? 1:0;
-    const brake = keys['s']||keys['arrowdown']||keys['brake'];
-    const tilt = (typeof keys['tilt'] === 'number') ? keys['tilt'] : 0;
-    let steer = steerInput;
-    if(tilt) steer = tilt;
+    if(!running || paused) return;
 
-    // car params
-    const car = CarDefs[Game.carKey] || CarDefs.red;
-    const lvl = Game.level;
-    const maxSpeed = car.maxSpeed * (0.6 + 0.2*lvl); // tuning
-    const accelRate = car.accel * (0.8 + 0.1*lvl);
-    const handling = car.handling / (0.8 + 0.05*lvl);
+    // Move player with keyboard
+    const moveSpeed = player.speed;
+    let dx = 0, dy = 0;
+    if(keys['arrowleft']||keys['a']) dx -= moveSpeed;
+    if(keys['arrowright']||keys['d']) dx += moveSpeed;
+    if(keys['arrowup']||keys['w']) dy -= moveSpeed;
+    if(keys['arrowdown']||keys['s']) dy += moveSpeed;
 
-    // throttle/brake effects
-    if(accel){ Game.speed += accelRate * dt; }
-    else{ Game.speed -= 120 * dt; }
-    if(brake) Game.speed -= 480 * dt;
-    Game.speed = Math.max(0, Math.min(maxSpeed, Game.speed));
+    player.x += dx; player.y += dy;
+    // Clamp inside canvas
+    const cssW = parseFloat(canvas.style.width);
+    const cssH = parseFloat(canvas.style.height);
+    player.x = Math.max(player.r, Math.min(cssW - player.r, player.x));
+    player.y = Math.max(player.r, Math.min(cssH - player.r, player.y));
 
-    // steering effect modifies heading and path
-    Game.position += (Game.speed / 30000) * dt * (1 + lvl*0.2); // progress along track
-    Game.position = Game.position % 1;
+    // Spawn enemies faster as score grows
+    spawnAcc += dt;
+    const spawnInterval = Math.max(0.25, 1.0 - Math.min(0.7, score/200));
+    if(spawnAcc > spawnInterval){ spawnAcc = 0; spawnEnemy(); }
 
-    // small steering -> change lateral offset by modifying position slightly
-    Game.angle += steer*handling*dt*(Game.speed/200);
-    Game.steer = steer;
-
-    // check lap completion using position crossing
-    const track = Tracks[Game.mapKey]();
-    const prevLap = Game.lap;
-    // naive lap increment: when position wraps from high->low
-    // store lastPos
-    if(Game._lastPos === undefined) Game._lastPos = Game.position;
-    if(Game._lastPos > 0.9 && Game.position < 0.1) Game.lap++;
-    Game._lastPos = Game.position;
-
-    // reduce speed if off road: approximate distance from center of road
-    const sample = sampleTrack(track,Game.position);
-    // compute distance to centerline in normalized coords
-    const carN = [sample[0], sample[1]];
-    // compute euclidean distance between car pos and centerline point (we're approximating car always on center path for simplicity)
-    // For more realism we'd calculate lateral offset -- this demo approximates and penalizes sudden steer.
-    // penalty
-    if(Math.abs(Game.steer) > 0.8 && Game.speed>maxSpeed*0.6){ Game.speed *= 0.995; }
-
-    // end conditions
-    if(Game.lap >= track.laps){
-      Game.running = false;
-      setTimeout(()=>alert(`Race finished! You completed ${track.laps} laps.`), 50);
+    // Update enemies
+    for(let i=enemies.length-1;i>=0;i--){
+      const e = enemies[i];
+      e.y += e.speed * (60*dt); // scale to approx px/frame
+      if(e.y > cssH + 50) enemies.splice(i,1);
+      else if(circleRectCollide(player.x, player.y, player.r, e.x, e.y, e.w, e.h)){
+        running = false; // game over
+      }
     }
 
+    // Score increases with time alive
+    score += dt * 10;
+    scoreEl.textContent = Math.floor(score);
   }
 
-  function render(){
-    ctx.clearRect(0,0,W,H);
-    const track = Tracks[Game.mapKey]();
-    if(!trackCache[Game.mapKey]) renderTrackToCache(Game.mapKey, track);
-    // draw cached track scaled to current canvas
-    const tx = trackCache[Game.mapKey];
-    if(tx){ ctx.drawImage(tx,0,0,W,H); }
-
-    // draw car at sample point
-    const pos = sampleTrack(track, Game.position);
-    const [cx,cy] = normToCanvas(pos);
-    const angle = Game.angle;
-    // draw other visual effects
-    // speed blur
-    const sp = Math.min(1, Game.speed/500);
-    for(let i=0;i<6;i++){
-      ctx.save(); ctx.globalAlpha = 0.02*sp; ctx.translate(cx,cy); ctx.rotate(angle); ctx.fillRect(-200*i*sp, -40, 200*i*sp, 80); ctx.restore();
+  function draw(){
+    // Clear
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // Background subtle grid
+    const cssW = parseFloat(canvas.style.width);
+    const cssH = parseFloat(canvas.style.height);
+    ctx.fillStyle = 'rgba(255,255,255,0.01)';
+    for(let i=0;i<20;i++){
+      ctx.fillRect(i*(cssW/20),0,1,cssH);
     }
-    drawCar(ctx,cx,cy,angle,CarDefs[Game.carKey], Math.max(0.5, Math.min(1.1, 0.7 + Game.speed/700)));
 
-    // HUD update
-    $('#lap').textContent = String(Game.lap);
-    $('#lapsTotal').textContent = String(track.laps);
-    $('#speed').textContent = String(Math.round(Game.speed));
-    $('#levelDisplay').textContent = String(Game.level);
-  }
+    // Draw player
+    ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fillStyle=player.color; ctx.fill();
+    ctx.closePath();
 
-  // --- UI wiring ---
-  $('#startBtn').addEventListener('click', ()=>{
-    if(!Game.running){
-      Game.running = true; last = performance.now(); requestAnimationFrame(gameTick);
-    } else { Game.running = false; }
-  });
-  $('#mapSelect').addEventListener('change', e=>{ Game.mapKey = e.target.value; trackCache = {}; });
-  $('#carSelect').addEventListener('change', e=>{ Game.carKey = e.target.value; });
-  $('#levelSelect').addEventListener('change', e=>{ Game.level = Number(e.target.value); });
+    // Draw enemies
+    enemies.forEach(e=>{
+      ctx.fillStyle = 'rgba(255,107,107,0.95)';
+      ctx.fillRect(e.x, e.y, e.w, e.h);
+    });
 
-  $('#loginBtn').addEventListener('click', ()=>$('#loginModal').style.display='flex');
-  $('#closeModal').addEventListener('click', ()=>$('#loginModal').style.display='none');
-
-  $('#doRegister').addEventListener('click', async ()=>{
-    const name = $('#loginName').value.trim(); const pw = $('#loginPass').value;
-    if(!name||!pw) return alert('Please enter name and password');
-    const res = await UserStore.register(name,pw);
-    if(res.ok){ alert('Registered. You can now login.'); }
-    else alert(res.msg||'Register failed');
-  });
-  $('#doLogin').addEventListener('click', async ()=>{
-    const name = $('#loginName').value.trim(); const pw = $('#loginPass').value;
-    if(!name||!pw) return alert('Please enter name and password');
-    const res = await UserStore.login(name,pw);
-    if(res.ok){
-      Game.username = name; $('#usernameDisplay').textContent = name; $('#loginModal').style.display='none';
-      loadSave();
-    } else alert(res.msg||'Login failed');
-  });
-
-  $('#saveBtn').addEventListener('click', ()=>{ saveGame(); alert('Saved locally.'); });
-  $('#loadBtn').addEventListener('click', ()=>{ loadSave(); alert('Loaded (if save existed).'); });
-  $('#resetBtn').addEventListener('click', ()=>{ localStorage.removeItem(Game.saveKey()); alert('Save reset.'); });
-
-  function saveGame(){
-    const payload = {
-      mapKey: Game.mapKey, carKey: Game.carKey, level: Game.level,
-      lap: Game.lap, position: Game.position, speed: Game.speed, timestamp:Date.now()
-    };
-    localStorage.setItem(Game.saveKey(), JSON.stringify(payload));
-  }
-  function loadSave(){
-    const raw = localStorage.getItem(Game.saveKey());
-    if(!raw) return;
-    try{ const p = JSON.parse(raw);
-      Game.mapKey = p.mapKey || Game.mapKey; Game.carKey = p.carKey || Game.carKey; Game.level = p.level || Game.level; Game.lap = p.lap||0; Game.position = p.position||0; Game.speed = p.speed||0;
-      $('#mapSelect').value = Game.mapKey; $('#carSelect').value = Game.carKey; $('#levelSelect').value = Game.level;
-    }catch(e){console.error(e)}
-  }
-
-  // load guest default save if present
-  window.addEventListener('load', ()=>{
-    $('#usernameDisplay').textContent = Game.username;
-    // bind mobile hint
-    if(/Mobi|Android/i.test(navigator.userAgent)){
-      $('#touchControls').style.display='flex';
+    // HUD
+    if(!running){
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(cssW/2 - 160, cssH/2 - 50, 320, 100);
+      ctx.fillStyle = '#e6eef8';
+      ctx.textAlign = 'center'; ctx.font = '18px system-ui';
+      ctx.fillText('Game Over — Score: ' + Math.floor(score), cssW/2, cssH/2 - 6);
+      ctx.font = '13px system-ui';
+      ctx.fillText('Press Start or Restart to try again', cssW/2, cssH/2 + 18);
     }
+  }
+
+  // Main loop
+  function loop(ts){
+    if(!lastTime) lastTime = ts;
+    const dt = Math.min(0.05,(ts - lastTime)/1000); // cap delta
+    lastTime = ts;
+    update(dt);
+    draw();
+
+    if(!running){
+      // when game stops, save high score
+      const sc = Math.floor(score);
+      if(sc > highScore){ highScore = sc; localStorage.setItem(STORAGE_KEY, highScore); highScoreEl.textContent = highScore; }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // Controls
+  startBtn.addEventListener('click', ()=>{
+    if(!running){ startGame(); }
+    paused = false; startBtn.disabled = true; pauseBtn.disabled = false;
   });
+  pauseBtn.addEventListener('click', ()=>{ paused = !paused; pauseBtn.textContent = paused ? 'Resume' : 'Pause'; });
+  restartBtn.addEventListener('click', ()=>{ resetGame(); startGame(); });
 
-  // Accessibility: pause on blur
-  window.addEventListener('blur', ()=>{ Game.running = false; });
+  function startGame(){
+    running = true; paused = false; lastTime = 0; score = 0; spawnAcc = 0; enemies.length = 0;
+    // Position player in center-bottom
+    const cssW = parseFloat(canvas.style.width), cssH = parseFloat(canvas.style.height);
+    player.x = cssW/2; player.y = cssH - 60;
+  }
+  function resetGame(){
+    running = false; paused = false; enemies.length = 0; score = 0; scoreEl.textContent = 0; startBtn.disabled = false; pauseBtn.disabled = false; pauseBtn.textContent='Pause';
+  }
 
-  // Start with an initial render
-  render();
-  </script>
+  // Start loop
+  requestAnimationFrame(loop);
+
+  // Start button initial state
+  startBtn.disabled = false; pauseBtn.disabled = true;
+
+  // Simple touch guidance for mobile: make canvas focusable
+  canvas.tabIndex = 1000;
+
+  // Expose for debugging in console
+  window.__game = {startGame, resetGame, enemies, player};
+})();
+</script>
 </body>
 </html>
