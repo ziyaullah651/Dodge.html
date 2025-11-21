@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SVG 2: Screen with captions appearing --> 
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 200" role="img" aria-labelledby="title2 desc2">
+  <title id="title2">Digital accessibility — captions and assistive tech</title>
+  <desc id="desc2">A monitor with text captions fading in and out to show accessible media.</desc>
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g transform="translate(30,30)">
+    <rect x="0" y="0" width="300" height="160" rx="12" fill="#fff" stroke="#dbe9ff" />
+    <rect x="18" y="20" width="264" height="86" rx="6" fill="#f7fbff" />
+    <rect x="18" y="112" width="264" height="18" rx="4" fill="#eef6ff" />
+    <!-- caption lines -->
+    <g id="captions">
+      <rect x="36" y="122" width="200" height="8" rx="4" fill="#0b76ef" opacity="0.9"/>
+      <rect x="36" y="134" width="150" height="6" rx="4" fill="#0b76ef" opacity="0.7"/>
+    </g>
+    <animate xlink:href="#captions" attributeName="opacity" dur="3s" values="1;0.2;1" repeatCount="indefinite"/>
+    <!-- assistive icon -->
+    <circle cx="40" cy="48" r="12" fill="#0b76ef" opacity="0.12"/>
+    <text x="36" y="52" font-size="12" fill="#0b76ef">Aa</text>
+  </g>
+</svg>

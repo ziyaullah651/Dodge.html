@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SVG 3: Support & counselling with pulsing hands --> 
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 200" role="img" aria-labelledby="title3 desc3">
+  <title id="title3">Support and accommodations</title>
+  <desc id="desc3">Two hands meeting with a heartbeat-like pulse to show support services and counselling.</desc>
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g transform="translate(40,30)">
+    <circle cx="100" cy="70" r="44" fill="#eaf6ff"/>
+    <path id="handL" d="M60 70 q20 -30 40 0" stroke="#0b76ef" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path id="handR" d="M140 70 q-20 -30 -40 0" stroke="#0b76ef" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <g id="pulse">
+      <path d="M20 140 q40 -30 80 0 q40 -30 80 0" stroke="#0b76ef" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.9"/>
+    </g>
+    <animate xlink:href="#pulse" attributeName="opacity" dur="2.2s" values="0.9;0.2;0.9" repeatCount="indefinite"/>
+    <animateTransform xlink:href="#handL" attributeName="transform" type="translate" dur="2s" values="0 0;0 -4;0 0" repeatCount="indefinite"/>
+    <animateTransform xlink:href="#handR" attributeName="transform" type="translate" dur="2s" values="0 0;0 -4;0 0" repeatCount="indefinite"/>
+  </g>
+</svg>

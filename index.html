@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inclusive Accessibility — College Toolkit</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Inclusive Accessibility Toolkit</h1>
+    <p class="tag">Practical steps & animated explainers to make college accessible for differently-abled students</p>
+  </header>
+
+  <main class="container">
+    <section class="intro card">
+      <h2>How might we ensure inclusive accessibility?</h2>
+      <p>This mini project demonstrates ideas, policies and quick wins — each illustrated with a short looping animated explainer (SVG animations acting like short videos).</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h3>1. Physical Access & Universal Design</h3>
+        <div class="media" data-title="Physical Access" data-desc="Ramps, tactile paving & accessible signage.">
+          <!-- animated SVG as 'video' -->
+          <div class="svg-player" role="img" aria-label="Animated illustration of a ramp and wheelchair accessibility">
+            <!-- inline SVG loaded from assets for accessibility -->
+            <!-- content injected by JS for easier reuse -->
+            <div id="svg1-placeholder"></div>
+          </div>
+          <div class="media-controls">
+            <button class="play-pause" data-target="svg1">Pause</button>
+          </div>
+        </div>
+        <p class="caption">Ensure ramps, elevators, wide doorways, tactile surfaces and clear signage.</p>
+      </article>
+
+      <article class="card">
+        <h3>2. Digital Accessibility</h3>
+        <div class="media" data-title="Digital Access" data-desc="Accessible websites, captions & assistive tech.">
+          <div class="svg-player" role="img" aria-label="Animated illustration of screen reader and captions">
+            <div id="svg2-placeholder"></div>
+          </div>
+          <div class="media-controls">
+            <button class="play-pause" data-target="svg2">Pause</button>
+          </div>
+        </div>
+        <p class="caption">Provide captions, transcripts, WCAG-compliant websites and accessible LMS content.</p>
+      </article>
+
+      <article class="card">
+        <h3>3. Inclusive Policies & Support</h3>
+        <div class="media" data-title="Policy & Support" data-desc="Counselling, reasonable adjustments and trained staff.">
+          <div class="svg-player" role="img" aria-label="Animated illustration of support and guidance">
+            <div id="svg3-placeholder"></div>
+          </div>
+          <div class="media-controls">
+            <button class="play-pause" data-target="svg3">Pause</button>
+          </div>
+        </div>
+        <p class="caption">Train staff, create an accommodations office and run awareness programmes.</p>
+      </article>
+    </section>
+
+    <section class="howto card">
+      <h2>How to use / publish</h2>
+      <ol>
+        <li>Extract the project folder and open <code>index.html</code> in a browser (Chrome, Firefox).</li>
+        <li>To publish on GitHub: create a repo and push these files; enable GitHub Pages from <code>main</code> branch (or use <code>docs/</code> folder).</li>
+        <li>All animated explainers are inline SVGs (scalable, accessible, small). Use the Play/Pause buttons to control them.</li>
+      </ol>
+    </section>
+
+    <section class="resources card">
+      <h2>Suggested next steps</h2>
+      <ul>
+        <li>Add real captioned MP4 explainers (replace SVG with &lt;video&gt; tag files in /assets).</li>
+        <li>Localize text and create alternative-language captions and transcripts.</li>
+        <li>Run accessibility audits (axe, Lighthouse) and iterate.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Made with ♿ Accessibility-first design in mind — feel free to fork and adapt.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
