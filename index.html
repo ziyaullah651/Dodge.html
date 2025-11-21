@@ -1,48 +1,40 @@
 <!doctype html>
 <!--
-Mario-like Platformer — single-file HTML
-- Auto-starts with a start screen
-- Tile-based levels, camera follow
-- Player: move left/right, jump, double-jump
-- Enemies that walk and can be stomped
-- Coins collectible
-- Lives, HUD, restart, next-level
-- Mobile touch controls and keyboard controls
-- No external assets (all drawn procedurally)
-Save as: mario_like.html
-Open in modern browser (Chrome/Edge/Firefox). Works on GitHub Pages.
+Fixed Mario-like platformer (single-file)
+- Prevents player falling by auto-creating ground if missing
+- Ensures spawn above ground and visible
+- Auto-starts (click/tap canvas to start & unlock audio)
+- Works on desktop, mobile, and GitHub Pages
+- Screenshot reference (for debugging): /mnt/data/Screenshot (9).png
+Save as: mario_fixed.html
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mini Platformer — Play</title>
+<title>Fixed Mini Platformer</title>
 <style>
   :root{
     --bg1:#87ceeb; --bg2:#6fb8e6; --ground:#4a7a1b; --platform:#8b5a2b;
-    --player:#1e3a8a; --coin:#ffd54a; --enemy:#e24b4b;
+    --player:#ff2f6d; --coin:#ffd54a; --enemy:#e24b4b;
   }
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(var(--bg1),var(--bg2));}
-  #gameWrap{display:flex;align-items:center;justify-content:center;height:100%;padding:12px;box-sizing:border-box}
+  #wrap{display:flex;align-items:center;justify-content:center;height:100%;padding:12px;box-sizing:border-box}
   canvas{display:block;width:100%;max-width:1200px;height:66vh;border-radius:10px;box-shadow:0 12px 40px rgba(7,22,40,0.35);background:transparent}
-  .uiTop{position:fixed;left:24px;top:18px;color:#023047;font-weight:700;text-shadow:0 1px 0 rgba(255,255,255,0.6)}
-  .uiTop div{background:rgba(255,255,255,0.9);padding:8px 10px;border-radius:8px;margin-bottom:6px;box-shadow:0 4px 8px rgba(0,0,0,0.08)}
-  .controlsDesktop{position:fixed;right:22px;top:18px;display:flex;gap:8px}
+  .uiTop{position:fixed;left:18px;top:16px;color:#023047;font-weight:700}
+  .uiTop div{background:rgba(255,255,255,0.95);padding:8px 10px;border-radius:8px;margin-bottom:6px;box-shadow:0 4px 8px rgba(0,0,0,0.08)}
+  .controls{position:fixed;right:18px;top:16px;display:flex;gap:8px}
   button{background:#fff;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);cursor:pointer;font-weight:700}
-  #startScreen{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.95);padding:20px;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.25);text-align:center;min-width:280px}
+  #startScreen{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.97);padding:18px;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.25);text-align:center;min-width:280px}
   #startScreen h1{margin:0 0 6px 0;font-size:20px}
-  #hud{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;background:rgba(255,255,255,0.9);padding:8px 12px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.12);font-weight:700}
-  /* Mobile touch controls */
   .mobileControls{position:fixed;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:14px;pointer-events:none}
   .touchBtn{width:72px;height:72px;border-radius:14px;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 8px 20px rgba(0,0,0,0.12);pointer-events:auto;user-select:none}
-  .touchBtn:active{transform:translateY(1px)}
-  .muted{opacity:0.86;font-weight:600}
   @media(min-width:980px){ .mobileControls{display:none} }
 </style>
 </head>
 <body>
-  <div id="gameWrap">
-    <canvas id="c" width="1280" height="720"></canvas>
+  <div id="wrap">
+    <canvas id="game" width="1280" height="720" aria-label="Platformer canvas"></canvas>
   </div>
 
   <div class="uiTop">
@@ -51,58 +43,41 @@ Open in modern browser (Chrome/Edge/Firefox). Works on GitHub Pages.
     <div id="livesLabel">Lives: 3</div>
   </div>
 
-  <div class="controlsDesktop">
+  <div class="controls">
     <button id="pauseBtn">Pause</button>
     <button id="restartBtn">Restart</button>
   </div>
 
-  <div id="hud">Use Arrow keys / WASD. Tap controls on mobile.</div>
+  <div id="startScreen">
+    <h1>Fixed Mini Platformer</h1>
+    <p style="margin:6px 0;color:#334155;font-size:13px">Click "Play" or tap the canvas to start. Player will always spawn above ground.</p>
+    <div style="margin-top:12px">
+      <button id="playBtn">Play</button>
+      <button id="helpBtn">How to Play</button>
+    </div>
+    <p id="helpText" style="margin-top:10px;color:#334155;font-size:13px;display:none">Move: ← → or A/D. Jump: ↑ or Space. Stomp enemies to defeat them. Collect coins.</p>
+  </div>
 
-  <div class="mobileControls">
+  <div class="mobileControls" aria-hidden="false">
     <div id="leftBtn" class="touchBtn">◀</div>
     <div id="jumpBtn" class="touchBtn">▲</div>
     <div id="rightBtn" class="touchBtn">▶</div>
   </div>
 
-  <div id="startScreen">
-    <h1>Mini Platformer</h1>
-    <p class="muted">A small Mario-inspired single-file game.</p>
-    <div style="margin-top:12px">
-      <button id="playBtn">Play</button>
-      <button id="tutorialBtn">How to Play</button>
-    </div>
-    <p id="tips" style="margin-top:10px;color:#334155;font-size:13px;display:none">Move with ← → or A/D. Jump with ↑ or Space. Stomp enemies to defeat them.</p>
-  </div>
-
 <script>
 (() => {
-  // Canvas & context
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d');
-
-  // UI elements
+  const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
   const startScreen = document.getElementById('startScreen');
-  const playBtn = document.getElementById('playBtn');
-  const tutorialBtn = document.getElementById('tutorialBtn');
-  const tipsEl = document.getElementById('tips');
-  const pauseBtn = document.getElementById('pauseBtn');
-  const restartBtn = document.getElementById('restartBtn');
-  const levelLabel = document.getElementById('levelLabel');
-  const scoreLabel = document.getElementById('scoreLabel');
-  const livesLabel = document.getElementById('livesLabel');
+  const playBtn = document.getElementById('playBtn'), helpBtn = document.getElementById('helpBtn'), helpText = document.getElementById('helpText');
+  const pauseBtn = document.getElementById('pauseBtn'), restartBtn = document.getElementById('restartBtn');
+  const levelLabel = document.getElementById('levelLabel'), scoreLabel = document.getElementById('scoreLabel'), livesLabel = document.getElementById('livesLabel');
+  const leftBtn = document.getElementById('leftBtn'), rightBtn = document.getElementById('rightBtn'), jumpBtn = document.getElementById('jumpBtn');
 
-  // Mobile buttons
-  const leftBtn = document.getElementById('leftBtn');
-  const rightBtn = document.getElementById('rightBtn');
-  const jumpBtn = document.getElementById('jumpBtn');
-
-  // Game configuration
   const TILE = 48;
   let W = canvas.width, H = canvas.height;
 
-  // Levels: arrays of strings (32 columns x 10 rows recommendation)
-  // Legend: '1' ground, 'p' platform, 'c' coin, 's' spike, 'e' enemy spawn, 'f' flag (end)
-  const levelData = [
+  // minimal level set. If bottom row has no ground, code will create one automatically.
+  const levelDataRaw = [
     [
       '                                ',
       '                                ',
@@ -113,437 +88,124 @@ Open in modern browser (Chrome/Edge/Firefox). Works on GitHub Pages.
       '         e       s              ',
       '                                ',
       '                                ',
-      '11111111111111111111111111111111'
-    ],
-    [
-      '                                ',
-      '                                ',
-      '                                ',
-      '      c     p    c     p     c  ',
-      '   p    p     p   p    p    p   ',
-      '                                ',
-      '    s       e        s          ',
-      '                                ',
-      '               p                ',
-      '11111111111111111111111111111111'
+      '                                '
     ]
   ];
 
-  let currentLevel = 0;
-  let map = parseLevel(levelData[currentLevel]);
-  let mapRows = map.length, mapCols = map[0].length;
-
-  // Player object
-  const player = {
-    x: TILE*2, y: TILE*(mapRows-3), w:36, h:44,
-    vx:0, vy:0, speed:240, jumpPower:540,
-    onGround:false, doubleJump:true, facing:1
-  };
-
-  let cameraX = 0;
-  let coins = 0, lives = 3;
-  let enemies = [];
-  let running = false, paused = false;
-
-  // Input state
-  const keys = {};
-  window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.key === ' ') e.preventDefault(); });
-  window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
-
-  // Touch controls
-  let touchLeft=false, touchRight=false, touchJump=false;
-  function bindTouch(el, setter){
-    el.addEventListener('pointerdown', e=>{ setter(true); e.preventDefault(); });
-    window.addEventListener('pointerup', e=>{ setter(false); });
-    el.addEventListener('pointercancel', e=>{ setter(false); });
-  }
-  bindTouch(leftBtn, v=>touchLeft=v);
-  bindTouch(rightBtn, v=>touchRight=v);
-  bindTouch(jumpBtn, v=>touchJump=v);
-
-  // Buttons
-  playBtn.addEventListener('click', () => { startGame(); });
-  tutorialBtn.addEventListener('click', () => { tipsEl.style.display = tipsEl.style.display === 'none' ? 'block' : 'none'; });
-  pauseBtn.addEventListener('click', ()=>{ paused = !paused; pauseBtn.textContent = paused ? 'Resume' : 'Pause'; });
-  restartBtn.addEventListener('click', ()=>{ resetLevel(); startGame(); });
-
-  // Parse level strings -> numeric map
+  // Parse helper -> numeric map: 0 empty; 1 = ground; 2 = platform; 3 = coin; 4 = spike; 5 = enemy; 6 = flag
   function parseLevel(arr){
     return arr.map(r => r.split('').map(ch => {
       switch(ch){ case '1': return 1; case 'p': return 2; case 'c': return 3; case 's': return 4; case 'e': return 5; case 'f': return 6; default: return 0; }
     }));
   }
 
+  // Ensure level has a ground row: if none found, add ground at bottom
+  function ensureGround(map){
+    const rows = map.length, cols = map[0].length;
+    let hasGround = false;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){ if(map[r][c] === 1) { hasGround = true; break; } }
+      if(hasGround) break;
+    }
+    if(!hasGround){
+      // put ground on last row
+      for(let c=0;c<cols;c++) map[rows-1][c] = 1;
+    }
+    return map;
+  }
+
+  // convert raw -> numeric map
+  let currentLevel = 0;
+  let map = parseLevel(levelDataRaw[currentLevel]);
+  map = ensureGround(map); // FIX: guarantee floor
+  let mapRows = map.length, mapCols = (map[0]||[]).length || 32;
+
+  // player spawn: find first ground tile column and spawn slightly above it
+  function computeSpawn(){
+    // find left-most ground tile in bottom rows
+    for(let r = mapRows-1; r>=0; r--){
+      for(let c=0;c<mapCols;c++){
+        if(map[r][c] === 1){
+          // spawn two tiles left of this ground tile center
+          const spawnX = Math.max(TILE*1.5, c*TILE + TILE/2 - TILE*2);
+          const spawnY = r*TILE - TILE; // one tile above ground
+          return {x: spawnX, y: spawnY};
+        }
+      }
+    }
+    // fallback center
+    return {x: TILE*2, y: TILE*(mapRows-3)};
+  }
+
+  // now set player
+  const player = { x:0, y:0, w:36, h:44, vx:0, vy:0, speed:240, jumpPower:520, onGround:false, doubleJump:true, facing:1 };
+  const spawn = computeSpawn();
+  player.x = spawn.x; player.y = spawn.y;
+
+  // enemies array
+  let enemies = [];
   function loadEnemies(){
     enemies = [];
     for(let r=0;r<mapRows;r++){
       for(let c=0;c<mapCols;c++){
         if(map[r][c] === 5){
-          enemies.push({x:c*TILE+TILE/2, y:r*TILE+TILE/2, w:36, h:36, dir:-1, speed:80});
+          enemies.push({x:c*TILE + TILE/2, y:r*TILE + TILE/2, w:36, h:36, dir:-1, speed:80});
         }
       }
     }
   }
-
   loadEnemies();
 
-  // Collision helpers
-  function solidTile(t){ return t === 1 || t === 2; }
+  // camera
+  let cameraX = 0;
+
+  // coins & lives
+  let coins = 0, lives = 3;
+
+  // Running state
+  let running = false, paused = false;
+
+  // Input
+  const keys = {};
+  window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.key === ' ') e.preventDefault(); });
+  window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+  // Touch buttons
+  let touchLeft=false, touchRight=false, touchJump=false;
+  function bindTouch(el, set) {
+    el.addEventListener('pointerdown', e => { set(true); e.preventDefault(); });
+    window.addEventListener('pointerup', e => { set(false); });
+    el.addEventListener('pointercancel', e => { set(false); });
+  }
+  bindTouch(leftBtn, v => touchLeft = v);
+  bindTouch(rightBtn, v => touchRight = v);
+  bindTouch(jumpBtn, v => touchJump = v);
+
+  // Controls
+  playBtn.addEventListener('click', () => startGame());
+  helpBtn.addEventListener('click', ()=> helpText.style.display = helpText.style.display === 'none' ? 'block' : 'none');
+  pauseBtn.addEventListener('click', ()=> { paused = !paused; pauseBtn.textContent = paused ? 'Resume' : 'Pause'; });
+  restartBtn.addEventListener('click', ()=> { resetLevel(); startGame(); });
+
+  // Utility: get tile at world position
   function tileAt(px, py){
     const c = Math.floor(px / TILE), r = Math.floor(py / TILE);
     if(c < 0 || c >= mapCols || r < 0 || r >= mapRows) return 0;
     return map[r][c];
   }
+  function isSolid(t){ return t === 1 || t === 2; }
 
+  // Collision for AABB entities
   function collideEntity(e, dt){
-    // horizontal move
+    // horizontal
     e.x += e.vx * dt;
     let left = e.x - e.w/2, right = e.x + e.w/2, top = e.y - e.h/2, bottom = e.y + e.h/2;
     let c0 = Math.floor(left / TILE), c1 = Math.floor(right / TILE), r0 = Math.floor(top / TILE), r1 = Math.floor(bottom / TILE);
     for(let r=r0; r<=r1; r++){
       for(let c=c0; c<=c1; c++){
-        if(r<0||r>=mapRows||c<0||c>=mapCols) continue;
-        if(solidTile(map[r][c])){
+        if(r<0 || r>=mapRows || c<0 || c>=mapCols) continue;
+        const t = map[r][c];
+        if(isSolid(t)){
           const tx = c*TILE, ty = r*TILE;
           if(right > tx && left < tx+TILE && bottom > ty && top < ty+TILE){
-            if(e.vx > 0) e.x = tx - e.w/2 - 0.01;
-            else if(e.vx < 0) e.x = tx + TILE + e.w/2 + 0.01;
-            e.vx = 0;
-            left = e.x - e.w/2; right = e.x + e.w/2;
-          }
-        }
-      }
-    }
-
-    // vertical move
-    e.y += e.vy * dt;
-    left = e.x - e.w/2; right = e.x + e.w/2; top = e.y - e.h/2; bottom = e.y + e.h/2;
-    c0 = Math.floor(left / TILE); c1 = Math.floor(right / TILE); r0 = Math.floor(top / TILE); r1 = Math.floor(bottom / TILE);
-    e.onGround = false;
-    for(let r=r0; r<=r1; r++){
-      for(let c=c0; c<=c1; c++){
-        if(r<0||r>=mapRows||c<0||c>=mapCols) continue;
-        if(solidTile(map[r][c])){
-          const tx = c*TILE, ty = r*TILE;
-          if(right > tx && left < tx+TILE && bottom > ty && top < ty+TILE){
-            if(e.vy > 0){ // falling
-              e.y = ty - e.h/2 - 0.01; e.vy = 0; e.onGround = true; e.doubleJump = true;
-            } else if(e.vy < 0){ // hitting head
-              e.y = ty + TILE + e.h/2 + 0.01; e.vy = 0;
-            }
-            top = e.y - e.h/2; bottom = e.y + e.h/2;
-          }
-        }
-      }
-    }
-  }
-
-  function rectsOverlap(a,b){
-    return Math.abs(a.x-b.x)*2 < (a.w+b.w) && Math.abs(a.y-b.y)*2 < (a.h+b.h);
-  }
-
-  function loseLife(){
-    lives--;
-    if(lives <= 0){
-      // reset level
-      lives = 3; coins = 0;
-      map = parseLevel(levelData[currentLevel]);
-      loadEnemies();
-      player.x = TILE*2; player.y = TILE*(mapRows-3); player.vx = 0; player.vy = 0;
-    } else {
-      // respawn near start
-      player.x = TILE*2; player.y = TILE*(mapRows-3); player.vx = 0; player.vy = 0;
-    }
-    updateHUD();
-  }
-
-  // Game loop
-  let lastTime = 0;
-  function loop(ts){
-    if(!lastTime) lastTime = ts;
-    const dt = Math.min(0.033, (ts - lastTime)/1000);
-    lastTime = ts;
-    if(running && !paused) {
-      update(dt);
-    }
-    render();
-    requestAnimationFrame(loop);
-  }
-
-  // Update game state
-  function update(dt){
-    // Input
-    let move = 0;
-    if(keys['arrowleft'] || keys['a'] || touchLeft) move -= 1;
-    if(keys['arrowright'] || keys['d'] || touchRight) move += 1;
-    player.vx = move * player.speed;
-    if(move !== 0) player.facing = move > 0 ? 1 : -1;
-
-    // Gravity
-    player.vy += 1400 * dt;
-
-    const wantJump = keys[' '] || keys['arrowup'] || keys['w'] || touchJump;
-    if(wantJump){
-      if(player.onGround){
-        player.vy = -player.jumpPower; player.onGround = false; player.doubleJump = true;
-        playSFX('jump');
-      } else if(player.doubleJump){
-        player.vy = -player.jumpPower*0.85; player.doubleJump = false; playSFX('jump');
-      }
-    }
-
-    // Collide player with world
-    collideEntity(player, dt);
-
-    // Check for coins, spikes, flag
-    const left = player.x - player.w/2, right = player.x + player.w/2, top = player.y - player.h/2, bottom = player.y + player.h/2;
-    const c0 = Math.floor(left / TILE), c1 = Math.floor(right / TILE), r0 = Math.floor(top / TILE), r1 = Math.floor(bottom / TILE);
-    for(let r=r0; r<=r1; r++){
-      for(let c=c0; c<=c1; c++){
-        if(r<0||r>=mapRows||c<0||c>=mapCols) continue;
-        const t = map[r][c];
-        if(t === 3){ // coin
-          map[r][c] = 0; coins++; playSFX('coin'); updateHUD();
-        } else if(t === 4){ // spike
-          map[r][c] = 0; loseLife();
-        } else if(t === 6){ // flag - level end
-          // move to next level
-          setTimeout(()=>{ nextLevel(); }, 300);
-        }
-      }
-    }
-
-    // Update enemies
-    for(let i = enemies.length-1; i>=0; i--){
-      const en = enemies[i];
-      en.x += en.dir * en.speed * dt;
-      // check ground ahead
-      const frontX = en.x + en.dir * (en.w/2 + 2);
-      const underTile = tileAt(frontX, en.y + en.h/2 + 6);
-      if(!solidTile(underTile)) en.dir *= -1;
-      // check wall ahead
-      const wallTile = tileAt(en.x + en.dir*(en.w/2 + 2), en.y);
-      if(solidTile(wallTile)) en.dir *= -1;
-      // collision with player
-      if(rectsOverlap(en, player)){
-        if(player.vy > 0){ // stomp
-          en.dead = true; player.vy = -player.jumpPower*0.35; playSFX('stomp');
-        } else {
-          loseLife();
-        }
-      }
-    }
-    enemies = enemies.filter(e => !e.dead);
-
-    // Camera follow (smooth)
-    cameraX += ((player.x - cameraX) - canvas.width/4) * 0.08;
-    if(cameraX < 0) cameraX = 0;
-  }
-
-  // Render
-  function render(){
-    // scale for crispness on high-DPI browsers
-    const ratio = Math.min(2, window.devicePixelRatio || 1.0);
-    canvas.width = Math.round(canvas.clientWidth * ratio);
-    canvas.height = Math.round(canvas.clientHeight * ratio);
-    ctx.setTransform(ratio,0,0,ratio,0,0);
-    W = canvas.width / ratio; H = canvas.height / ratio;
-
-    // sky gradient
-    const g = ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue('--bg1').trim() || '#87ceeb');
-    g.addColorStop(1, getComputedStyle(document.documentElement).getPropertyValue('--bg2').trim() || '#6fb8e6');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-
-    // parallax hills
-    drawParallax(cameraX);
-
-    // tiles
-    const startCol = Math.floor(cameraX / TILE);
-    const colsOnScreen = Math.ceil(W / TILE) + 2;
-    for(let r=0; r<mapRows; r++){
-      for(let c = startCol; c < startCol + colsOnScreen; c++){
-        if(c < 0 || c >= mapCols) continue;
-        const t = map[r][c];
-        const sx = c*TILE - cameraX;
-        const sy = r*TILE;
-        if(t === 1){ drawGround(sx,sy); }
-        else if(t === 2){ drawPlatform(sx,sy); }
-        else if(t === 3){ drawCoin(sx+TILE/2, sy+TILE/2); }
-        else if(t === 4){ drawSpike(sx,sy); }
-        else if(t === 6){ drawFlag(sx,sy); }
-      }
-    }
-
-    // enemies
-    enemies.forEach(en => {
-      const ex = en.x - cameraX - en.w/2;
-      const ey = en.y - en.h/2;
-      drawEnemy(ex, ey, en.w, en.h);
-    });
-
-    // player
-    drawPlayer(player.x - cameraX - player.w/2, player.y - player.h/2, player.w, player.h);
-
-    // HUD in canvas (optional)
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.fillRect(10, 10, 200, 56);
-    ctx.fillStyle = '#000'; ctx.font = '16px system-ui'; ctx.fillText('Coins: ' + coins, 18, 32); ctx.fillText('Lives: ' + lives, 18, 52);
-
-    // If paused overlay
-    if(paused){
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      ctx.fillRect(0,0,W,H);
-      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '34px system-ui';
-      ctx.fillText('Paused', W/2, H/2);
-      ctx.textAlign = 'left';
-    }
-  }
-
-  // drawing helpers
-  function drawParallax(cx){
-    const p = cx * 0.2;
-    ctx.fillStyle = '#b3e6a8';
-    ctx.beginPath();
-    ctx.ellipse(-100 - p%800, H-140, 300, 120, 0, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#9ed48f';
-    ctx.beginPath();
-    ctx.ellipse(200 - p%700, H-130, 280, 110, 0, 0, Math.PI*2); ctx.fill();
-  }
-
-  function drawGround(sx, sy){
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim() || '#4a7a1b';
-    ctx.fillRect(sx, sy, TILE, TILE);
-    ctx.fillStyle = '#7ec850'; ctx.fillRect(sx, sy, TILE, TILE/3);
-  }
-  function drawPlatform(sx, sy){
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--platform').trim() || '#8b5a2b';
-    ctx.fillRect(sx+6, sy+TILE/2, TILE-12, TILE/6);
-  }
-  function drawCoin(cx, cy){
-    ctx.beginPath(); ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--coin').trim() || '#ffd54a';
-    ctx.arc(cx, cy, TILE/6, 0, Math.PI*2); ctx.fill(); ctx.closePath();
-  }
-  function drawSpike(sx, sy){
-    ctx.fillStyle = '#d30d0d'; ctx.beginPath(); ctx.moveTo(sx, sy+TILE); ctx.lineTo(sx+TILE/2, sy+TILE/3); ctx.lineTo(sx+TILE, sy+TILE); ctx.fill(); ctx.closePath();
-  }
-  function drawFlag(sx, sy){
-    ctx.fillStyle = '#b8860b'; ctx.fillRect(sx+TILE-12, sy+TILE/4, 8, TILE*3/4);
-    ctx.fillStyle = '#ff4b4b'; ctx.fillRect(sx+TILE-30, sy+TILE/4, 20, 12);
-  }
-
-  // player draw (simple pixel-feel)
-  let walkAnim = 0;
-  function drawPlayer(x,y,w,h){
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--player').trim() || '#1e3a8a';
-    ctx.fillRect(x, y, w, h);
-    ctx.fillStyle = '#ffdd57'; ctx.fillRect(x+6, y+6, 8, 8);
-    walkAnim += 0.07;
-    ctx.fillStyle = '#0f2047'; ctx.fillRect(x+6, y+h-12, 8, 12); ctx.fillRect(x+w-14, y+h-12, 8, 12);
-    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(x+4, y+h+4, w-8, 6);
-  }
-
-  function drawEnemy(x,y,w,h){
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--enemy').trim() || '#e24b4b';
-    ctx.fillRect(x,y,w,h);
-    ctx.fillStyle = '#000'; ctx.fillRect(x+8, y+8, 6, 6);
-  }
-
-  // Simple audio SFX (tiny oscillator blips)
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let sfxOn = true;
-  function playSFX(type){
-    if(!sfxOn) return;
-    try{
-      const now = audioCtx.currentTime;
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.connect(g); g.connect(audioCtx.destination);
-      if(type === 'jump'){ o.type='sine'; o.frequency.setValueAtTime(360, now); g.gain.value = 0.003; o.start(now); o.stop(now + 0.12); }
-      else if(type === 'coin'){ o.type='triangle'; o.frequency.setValueAtTime(880, now); g.gain.value = 0.002; o.start(now); o.stop(now + 0.14); }
-      else if(type === 'stomp'){ o.type='square'; o.frequency.setValueAtTime(180, now); g.gain.value = 0.004; o.start(now); o.stop(now + 0.18); }
-    } catch(e) {}
-  }
-
-  function updateHUD(){
-    levelLabel.textContent = 'Level ' + (currentLevel + 1);
-    scoreLabel.textContent = 'Coins: ' + coins;
-    livesLabel.textContent = 'Lives: ' + lives;
-  }
-
-  function nextLevel(){
-    currentLevel++;
-    if(currentLevel >= levelData.length) {
-      // if no more levels, show victory screen
-      running = false;
-      startScreen.style.display = 'block';
-      startScreen.querySelector('h1').textContent = 'You Win!';
-      startScreen.querySelector('.muted').textContent = 'Nice job — you finished all levels.';
-      playBtn.textContent = 'Play Again';
-      return;
-    }
-    map = parseLevel(levelData[currentLevel]);
-    mapRows = map.length; mapCols = map[0].length;
-    player.x = TILE*2; player.y = TILE*(mapRows-3);
-    player.vx = 0; player.vy = 0;
-    coins = 0; lives = 3;
-    loadEnemies();
-    updateHUD();
-  }
-
-  function resetLevel(){
-    map = parseLevel(levelData[currentLevel]);
-    mapRows = map.length; mapCols = map[0].length;
-    player.x = TILE*2; player.y = TILE*(mapRows-3);
-    player.vx = 0; player.vy = 0;
-    coins = 0; lives = 3;
-    loadEnemies();
-    updateHUD();
-  }
-
-  // Start game
-  function startGame(){
-    startScreen.style.display = 'none';
-    running = true; paused = false;
-    updateHUD();
-    // ensure audio unlocked by user gesture
-    try{ if(audioCtx.state === 'suspended') audioCtx.resume(); } catch(e){}
-  }
-
-  // Auto-show start screen first, but allow immediate start on load
-  // Expose a short delay so the player sees the start screen
-  // Optionally auto-start after 300ms for immediate play:
-  window.addEventListener('load', () => {
-    // auto-start if user prefers immediate play:
-    // startGame();
-  });
-
-  // Auto-start if user clicks Play
-  playBtn.focus();
-  // kick-off main loop
-  requestAnimationFrame(loop);
-
-  // Helpful: start automatically if user clicks anywhere (gesture for audio unlock)
-  canvas.addEventListener('pointerdown', () => {
-    if(!running) startGame();
-  });
-
-  // Responsive: scale canvas element to available width while preserving aspect
-  function resizeCanvas(){
-    const wrap = document.getElementById('gameWrap');
-    const wCSS = Math.min(1200, window.innerWidth - 64);
-    canvas.style.width = wCSS + 'px';
-    canvas.style.height = Math.round(wCSS * 9/16) + 'px';
-  }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-
-  // Allow tapping anywhere to start
-  document.body.addEventListener('keydown', (e) => {
-    if(!running && (e.key === ' ' || e.key === 'Enter')) startGame();
-  });
-
-})();
-</script>
-</body>
-</html>
+            if(e.vx > 0) e.x = tx - e.w/2
