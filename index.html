@@ -1,146 +1,116 @@
 <!doctype html>
 <!--
-Advanced Platformer — "Classic Runner Plus"
-Features added (per request):
-  - pixel-art style sprite animation (canvas-drawn)
-  - simple WebAudio sound effects + background synth loop
-  - level editor (paint tiles, place coins/spikes/enemies), save/load levels to localStorage
-  - checkpoints and save/load game state
-  - multiple levels with progression
-  - download project button (exports current HTML as a single-file project)
-
-Save this file as platformer-inspired-game-advanced.html and open in a modern browser.
+Mario-like Platformer — single-file HTML
+- Auto-starts with a start screen
+- Tile-based levels, camera follow
+- Player: move left/right, jump, double-jump
+- Enemies that walk and can be stomped
+- Coins collectible
+- Lives, HUD, restart, next-level
+- Mobile touch controls and keyboard controls
+- No external assets (all drawn procedurally)
+Save as: mario_like.html
+Open in modern browser (Chrome/Edge/Firefox). Works on GitHub Pages.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Classic Runner — Advanced</title>
+<title>Mini Platformer — Play</title>
 <style>
-  :root{--panel:#ffffffee;--muted:#444}
-  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(#7ec0ee,#5fb0e0)}
-  #wrap{display:flex;gap:14px;padding:12px}
-  #left{flex:1;display:flex;flex-direction:column;align-items:center}
-  canvas{background:linear-gradient(#87ceeb,#6fb8e6);border-radius:8px;border:6px solid rgba(0,0,0,0.12);box-shadow:0 10px 30px rgba(0,0,0,0.2)}
-  #sidebar{width:360px;background:var(--panel);border-radius:10px;padding:12px;box-shadow:0 8px 20px rgba(0,0,0,0.12)}
-  h2{margin:6px 0}
-  .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-  button{padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);cursor:pointer}
-  .tool{display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
-  .tilePalette{display:flex;flex-wrap:wrap;gap:6px}
-  .tile{width:44px;height:44px;border-radius:6px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
-  input[type=range]{width:100%}
-  textarea{width:100%;height:100px}
-  small{color:var(--muted)}
-  .muted{color:var(--muted);font-size:13px}
-  .controls{display:flex;gap:8px;flex-wrap:wrap}
-  .mobileControls{display:none}
-  @media(max-width:980px){#wrap{flex-direction:column;padding:8px}#sidebar{width:auto} .mobileControls{display:flex}}
+  :root{
+    --bg1:#87ceeb; --bg2:#6fb8e6; --ground:#4a7a1b; --platform:#8b5a2b;
+    --player:#1e3a8a; --coin:#ffd54a; --enemy:#e24b4b;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(var(--bg1),var(--bg2));}
+  #gameWrap{display:flex;align-items:center;justify-content:center;height:100%;padding:12px;box-sizing:border-box}
+  canvas{display:block;width:100%;max-width:1200px;height:66vh;border-radius:10px;box-shadow:0 12px 40px rgba(7,22,40,0.35);background:transparent}
+  .uiTop{position:fixed;left:24px;top:18px;color:#023047;font-weight:700;text-shadow:0 1px 0 rgba(255,255,255,0.6)}
+  .uiTop div{background:rgba(255,255,255,0.9);padding:8px 10px;border-radius:8px;margin-bottom:6px;box-shadow:0 4px 8px rgba(0,0,0,0.08)}
+  .controlsDesktop{position:fixed;right:22px;top:18px;display:flex;gap:8px}
+  button{background:#fff;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);cursor:pointer;font-weight:700}
+  #startScreen{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.95);padding:20px;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,0.25);text-align:center;min-width:280px}
+  #startScreen h1{margin:0 0 6px 0;font-size:20px}
+  #hud{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;background:rgba(255,255,255,0.9);padding:8px 12px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.12);font-weight:700}
+  /* Mobile touch controls */
+  .mobileControls{position:fixed;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:14px;pointer-events:none}
+  .touchBtn{width:72px;height:72px;border-radius:14px;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 8px 20px rgba(0,0,0,0.12);pointer-events:auto;user-select:none}
+  .touchBtn:active{transform:translateY(1px)}
+  .muted{opacity:0.86;font-weight:600}
+  @media(min-width:980px){ .mobileControls{display:none} }
 </style>
 </head>
 <body>
-  <div id="wrap">
-    <div id="left">
-      <canvas id="game" width="1024" height="576"></canvas>
-      <div style="width:1024px;max-width:96vw;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
-        <div class="muted">Level: <span id="levelNum">1</span> — Coins: <span id="coinCount">0</span> — Lives: <span id="lives">3</span></div>
-        <div>
-          <button id="saveCheckpoint">Save Checkpoint</button>
-          <button id="loadCheckpoint">Load Checkpoint</button>
-        </div>
-      </div>
+  <div id="gameWrap">
+    <canvas id="c" width="1280" height="720"></canvas>
+  </div>
+
+  <div class="uiTop">
+    <div id="levelLabel">Level 1</div>
+    <div id="scoreLabel">Coins: 0</div>
+    <div id="livesLabel">Lives: 3</div>
+  </div>
+
+  <div class="controlsDesktop">
+    <button id="pauseBtn">Pause</button>
+    <button id="restartBtn">Restart</button>
+  </div>
+
+  <div id="hud">Use Arrow keys / WASD. Tap controls on mobile.</div>
+
+  <div class="mobileControls">
+    <div id="leftBtn" class="touchBtn">◀</div>
+    <div id="jumpBtn" class="touchBtn">▲</div>
+    <div id="rightBtn" class="touchBtn">▶</div>
+  </div>
+
+  <div id="startScreen">
+    <h1>Mini Platformer</h1>
+    <p class="muted">A small Mario-inspired single-file game.</p>
+    <div style="margin-top:12px">
+      <button id="playBtn">Play</button>
+      <button id="tutorialBtn">How to Play</button>
     </div>
-
-    <aside id="sidebar">
-      <h2>Level Editor & Project</h2>
-      <div class="row">
-        <div class="tool" id="toolPump">Tool: <strong id="currentTool">Tile</strong></div>
-        <select id="tileSelect">
-          <option value="1">Ground</option>
-          <option value="2">Platform</option>
-          <option value="3">Coin</option>
-          <option value="4">Spike</option>
-          <option value="5">Enemy</option>
-          <option value="0">Eraser</option>
-          <option value="6">Flag (Checkpoint)</option>
-        </select>
-      </div>
-
-      <div class="row">
-        <button id="toggleEdit">Toggle Editor</button>
-        <button id="prevLv">Prev Level</button>
-        <button id="nextLv">Next Level</button>
-        <button id="downloadProject">Download Project</button>
-      </div>
-
-      <div style="margin-top:8px">
-        <strong>Editor</strong>
-        <div class="muted">Click canvas to paint tiles. Use Shift+click to pan camera.</div>
-        <div style="margin-top:8px" class="controls">
-          <button id="addLevel">Add Level</button>
-          <button id="saveLevel">Save Level</button>
-          <button id="exportLevel">Export Level JSON</button>
-        </div>
-      </div>
-
-      <hr />
-      <div>
-        <strong>Audio</strong>
-        <div class="muted">Background synth and SFX (toggle)</div>
-        <div class="row">
-          <button id="toggleAudio">Toggle Audio</button>
-          <button id="playMusic">Play Music</button>
-        </div>
-      </div>
-
-      <hr />
-      <div>
-        <strong>Project Files</strong>
-        <div class="muted">Download a single-file HTML copy of this project (includes current level data).</div>
-        <div style="margin-top:8px">
-          <button id="downloadHTML">Download HTML</button>
-        </div>
-      </div>
-
-      <hr />
-      <div>
-        <strong>Level JSON</strong>
-        <textarea id="levelJSON"></textarea>
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <button id="importJSON">Import JSON</button>
-          <button id="clearJSON">Clear</button>
-        </div>
-      </div>
-    </aside>
+    <p id="tips" style="margin-top:10px;color:#334155;font-size:13px;display:none">Move with ← → or A/D. Jump with ↑ or Space. Stomp enemies to defeat them.</p>
   </div>
 
 <script>
-/* Advanced platformer single-file implementation
-   - No external assets (all drawn procedurally)
-   - Uses localStorage for saves and levels
-   - Simple WebAudio synth for SFX + loop
-*/
 (() => {
-  // ----------- config
-  const TILE = 48;
-  const canvas = document.getElementById('game');
+  // Canvas & context
+  const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d');
+
+  // UI elements
+  const startScreen = document.getElementById('startScreen');
+  const playBtn = document.getElementById('playBtn');
+  const tutorialBtn = document.getElementById('tutorialBtn');
+  const tipsEl = document.getElementById('tips');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const levelLabel = document.getElementById('levelLabel');
+  const scoreLabel = document.getElementById('scoreLabel');
+  const livesLabel = document.getElementById('livesLabel');
+
+  // Mobile buttons
+  const leftBtn = document.getElementById('leftBtn');
+  const rightBtn = document.getElementById('rightBtn');
+  const jumpBtn = document.getElementById('jumpBtn');
+
+  // Game configuration
+  const TILE = 48;
   let W = canvas.width, H = canvas.height;
 
-  const levelNumEl = document.getElementById('levelNum');
-  const coinCountEl = document.getElementById('coinCount');
-  const livesEl = document.getElementById('lives');
-
-  // default levels (as strings) — small set; editor can add more
-  const defaultLevels = [
+  // Levels: arrays of strings (32 columns x 10 rows recommendation)
+  // Legend: '1' ground, 'p' platform, 'c' coin, 's' spike, 'e' enemy spawn, 'f' flag (end)
+  const levelData = [
     [
       '                                ',
       '                                ',
       '                                ',
       '                                ',
-      '            c      p   c        ',
-      '       p           p        p   ',
-      '      e      s                  ',
+      '           c    p    c          ',
+      '      p              p         ',
+      '         e       s              ',
       '                                ',
       '                                ',
       '11111111111111111111111111111111'
@@ -149,232 +119,429 @@ Save this file as platformer-inspired-game-advanced.html and open in a modern br
       '                                ',
       '                                ',
       '                                ',
-      '     c       p       c       p  ',
-      '    p p    p   p    p  p    p   ',
+      '      c     p    c     p     c  ',
+      '   p    p     p   p    p    p   ',
       '                                ',
-      '         s      e          s    ',
+      '    s       e        s          ',
       '                                ',
       '               p                ',
       '11111111111111111111111111111111'
     ]
   ];
 
-  // utilities to parse and stringify level representation (tile numbers)
-  function parseLevel(arr){ return arr.map(r => r.split('').map(ch => {
-    switch(ch){ case '1': return 1; case 'p': return 2; case 'c': return 3; case 's': return 4; case 'e': return 5; case 'f': return 6; default: return 0; }
-  })); }
-  function stringifyLevel(map){ return map.map(row => row.map(t => { switch(t){case 1: return '1'; case 2:return 'p'; case 3:return 'c'; case 4: return 's'; case 5:return 'e'; case 6:return 'f'; default: return ' ';}}).join('')); }
-
-  // load levels from localStorage or defaults
-  const LS_LEVELS_KEY = 'adv_platformer_levels_v1';
-  let levels = JSON.parse(localStorage.getItem(LS_LEVELS_KEY) || 'null');
-  if(!levels){ levels = defaultLevels.slice(); localStorage.setItem(LS_LEVELS_KEY, JSON.stringify(levels)); }
-
   let currentLevel = 0;
-  let map = parseLevel(levels[currentLevel]);
+  let map = parseLevel(levelData[currentLevel]);
   let mapRows = map.length, mapCols = map[0].length;
 
-  // game state
-  const player = {x: TILE*2, y: TILE*(mapRows-3), w:36, h:40, vx:0, vy:0, speed:240, jumpPower:520, onGround:false, doubleJump:true};
+  // Player object
+  const player = {
+    x: TILE*2, y: TILE*(mapRows-3), w:36, h:44,
+    vx:0, vy:0, speed:240, jumpPower:540,
+    onGround:false, doubleJump:true, facing:1
+  };
+
   let cameraX = 0;
-  let coins = 0; let lives = 3;
+  let coins = 0, lives = 3;
   let enemies = [];
-  let checkpoints = {}; // level->pos
+  let running = false, paused = false;
 
-  // editor state
-  let editorMode = false; let selectedTile = 1; // tile values
-  const tileSelect = document.getElementById('tileSelect');
-  tileSelect.addEventListener('change', e => { selectedTile = Number(e.target.value); document.getElementById('currentTool').textContent = selectedTile === 0 ? 'Eraser' : 'Tile'; });
-
-  document.getElementById('toggleEdit').addEventListener('click', ()=>{ editorMode = !editorMode; alert('Editor ' + (editorMode ? 'enabled' : 'disabled') + '. Click canvas to paint tiles.'); });
-  document.getElementById('prevLv').addEventListener('click', ()=>{ currentLevel = Math.max(0,currentLevel-1); loadLevel(currentLevel); });
-  document.getElementById('nextLv').addEventListener('click', ()=>{ currentLevel = Math.min(levels.length-1,currentLevel+1); loadLevel(currentLevel); });
-  document.getElementById('addLevel').addEventListener('click', ()=>{ const blank = Array.from({length:10},()=>' '.repeat(32)); levels.push(blank); localStorage.setItem(LS_LEVELS_KEY, JSON.stringify(levels)); currentLevel = levels.length-1; loadLevel(currentLevel); alert('Added blank level'); });
-  document.getElementById('saveLevel').addEventListener('click', ()=>{ levels[currentLevel] = stringifyLevel(map); localStorage.setItem(LS_LEVELS_KEY, JSON.stringify(levels)); alert('Saved level to localStorage'); });
-  document.getElementById('exportLevel').addEventListener('click', ()=>{ const json = JSON.stringify(map); document.getElementById('levelJSON').value = json; });
-  document.getElementById('importJSON').addEventListener('click', ()=>{ try{ const data = JSON.parse(document.getElementById('levelJSON').value); map = data; mapRows = map.length; mapCols = map[0].length; levels[currentLevel] = stringifyLevel(map); localStorage.setItem(LS_LEVELS_KEY, JSON.stringify(levels)); loadEnemies(); updateUI(); alert('Imported level'); }catch(e){alert('Invalid JSON');} });
-  document.getElementById('clearJSON').addEventListener('click', ()=> document.getElementById('levelJSON').value = '');
-
-  // Download project (single-file HTML) — creates a copy of current HTML with embedded level JSON
-  document.getElementById('downloadHTML').addEventListener('click', ()=>{
-    const doc = buildSelfContainedHTML();
-    const blob = new Blob([doc], {type:'text/html'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'platformer_project.html'; a.click(); URL.revokeObjectURL(url);
-  });
-
-  document.getElementById('downloadProject').addEventListener('click', ()=>{ const data = {levels}; const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'levels.json'; a.click(); URL.revokeObjectURL(url); });
-
-  // checkpoint save/load
-  document.getElementById('saveCheckpoint').addEventListener('click', ()=>{ checkpoints[currentLevel] = {x:player.x,y:player.y,coins,lives}; localStorage.setItem('adv_platformer_checkpoint', JSON.stringify(checkpoints)); alert('Checkpoint saved'); });
-  document.getElementById('loadCheckpoint').addEventListener('click', ()=>{ const cp = JSON.parse(localStorage.getItem('adv_platformer_checkpoint')||'{}'); if(cp[currentLevel]){ player.x = cp[currentLevel].x; player.y = cp[currentLevel].y; coins = cp[currentLevel].coins; lives = cp[currentLevel].lives; updateUI(); alert('Loaded checkpoint'); } else alert('No checkpoint for this level'); });
-
-  // simple audio with WebAudio
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let musicOn = false, sfxOn = true; let musicNode = null;
-  function playSFX(type){ if(!sfxOn) return; try{ const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type='square'; if(type==='jump'){ o.frequency.value = 300; g.gain.value = 0.0015; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>{o.stop()},120); }
-    else if(type==='coin'){ o.frequency.value = 900; g.gain.value = 0.0009; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>{o.stop()},140); }
-    else if(type==='stomp'){ o.frequency.value = 200; g.gain.value = 0.002; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>{o.stop()},200); }
-  }catch(e){/*ignore*/} }
-
-  document.getElementById('toggleAudio').addEventListener('click', ()=>{ sfxOn = !sfxOn; alert('SFX ' + (sfxOn? 'on':'off')); });
-  document.getElementById('playMusic').addEventListener('click', ()=>{ if(musicOn){ stopMusic(); } else startMusic(); });
-
-  function startMusic(){ if(musicOn) return; musicOn = true; audioCtx.resume(); // simple loop: two oscillators modulating
-    const o1 = audioCtx.createOscillator(); const o2 = audioCtx.createOscillator(); const g = audioCtx.createGain(); g.gain.value = 0.0009; o1.type='sine'; o2.type='sine'; o1.frequency.value = 220; o2.frequency.value = 440; const merger = audioCtx.createGain(); o1.connect(merger); o2.connect(merger); merger.connect(g); g.connect(audioCtx.destination); o1.start(); o2.start(); musicNode = {o1,o2,g,merger}; }
-  function stopMusic(){ if(!musicOn) return; musicOn=false; if(musicNode){ musicNode.o1.stop(); musicNode.o2.stop(); musicNode = null; } }
-
-  // input
+  // Input state
   const keys = {};
-  window.addEventListener('keydown', e=>{ keys[e.key.toLowerCase()] = true; if(e.key===' '){ e.preventDefault(); } });
-  window.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; });
+  window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.key === ' ') e.preventDefault(); });
+  window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
-  // pointer editor painting
-  let isPointerDown = false; let lastPointer = null, panning = false;
-  canvas.addEventListener('pointerdown', e=>{ isPointerDown = true; const p = toCanvas(e); if(editorMode){ paintAt(p.x + cameraX, p.y); } else { lastPointer = p; } });
-  window.addEventListener('pointerup', ()=>{ isPointerDown=false; panning=false; lastPointer=null; });
-  canvas.addEventListener('pointermove', e=>{ if(isPointerDown && editorMode){ const p = toCanvas(e); paintAt(p.x + cameraX, p.y); } else if(keys['shift']){ // pan with shift drag
-    if(isPointerDown && lastPointer){ const p = toCanvas(e); const dx = lastPointer.x - p.x; cameraX += dx; lastPointer = p; }
-  }});
+  // Touch controls
+  let touchLeft=false, touchRight=false, touchJump=false;
+  function bindTouch(el, setter){
+    el.addEventListener('pointerdown', e=>{ setter(true); e.preventDefault(); });
+    window.addEventListener('pointerup', e=>{ setter(false); });
+    el.addEventListener('pointercancel', e=>{ setter(false); });
+  }
+  bindTouch(leftBtn, v=>touchLeft=v);
+  bindTouch(rightBtn, v=>touchRight=v);
+  bindTouch(jumpBtn, v=>touchJump=v);
 
-  function toCanvas(e){ const rect = canvas.getBoundingClientRect(); return {x: (e.clientX - rect.left), y: (e.clientY - rect.top)}; }
+  // Buttons
+  playBtn.addEventListener('click', () => { startGame(); });
+  tutorialBtn.addEventListener('click', () => { tipsEl.style.display = tipsEl.style.display === 'none' ? 'block' : 'none'; });
+  pauseBtn.addEventListener('click', ()=>{ paused = !paused; pauseBtn.textContent = paused ? 'Resume' : 'Pause'; });
+  restartBtn.addEventListener('click', ()=>{ resetLevel(); startGame(); });
 
-  function paintAt(px, py){ const c = Math.floor(px / TILE); const r = Math.floor(py / TILE); if(r<0||r>=mapRows||c<0||c>=mapCols) return; map[r][c] = selectedTile; if(selectedTile === 5) { // enemy
-      // spawn an enemy object
-      enemies.push({x:c*TILE+TILE/2,y:r*TILE+TILE/2,w:36,h:36,dir:-1,speed:80});
-    }
+  // Parse level strings -> numeric map
+  function parseLevel(arr){
+    return arr.map(r => r.split('').map(ch => {
+      switch(ch){ case '1': return 1; case 'p': return 2; case 'c': return 3; case 's': return 4; case 'e': return 5; case 'f': return 6; default: return 0; }
+    }));
   }
 
-  // enemies loader
-  function loadEnemies(){ enemies.length=0; for(let r=0;r<mapRows;r++){ for(let c=0;c<mapCols;c++){ if(map[r][c]===5){ enemies.push({x:c*TILE+TILE/2,y:r*TILE+TILE/2,w:36,h:36,dir:-1,speed:80}); } }} }
-  loadEnemies();
-
-  function loadLevel(i){ currentLevel = i; map = parseLevel(levels[currentLevel]); mapRows = map.length; mapCols = map[0].length; player.x = TILE*2; player.y = TILE*(mapRows-3); player.vx=0; player.vy=0; cameraX=0; coins=0; lives=3; loadEnemies(); updateUI(); }
-
-  function updateUI(){ levelNumEl.textContent = currentLevel+1; coinCountEl.textContent = Math.floor(coins); livesEl.textContent = lives; }
-
-  // basic physics and collisions
-  function solidAt(t){ return t===1||t===2; }
-  function tileAt(px,py){ const c = Math.floor(px/TILE), r = Math.floor(py/TILE); if(c<0||c>=mapCols||r<0||r>=mapRows) return 0; return map[r][c]; }
-
-  function collide(entity, dt){ // AABB tile collisions
-    entity.x += entity.vx * dt; // horizontal
-    let left = entity.x - entity.w/2, right = entity.x + entity.w/2, top = entity.y - entity.h/2, bottom = entity.y + entity.h/2;
-    let c0 = Math.floor(left/TILE), c1 = Math.floor(right/TILE), r0 = Math.floor(top/TILE), r1 = Math.floor(bottom/TILE);
-
-    for(let r=r0;r<=r1;r++){ for(let c=c0;c<=c1;c++){ if(r<0||r>=mapRows||c<0||c>=mapCols) continue; const t = map[r][c]; if(solidAt(t)){ const tx=c*TILE, ty=r*TILE; if(right > tx && left < tx+TILE && bottom > ty && top < ty+TILE){ if(entity.vx > 0) entity.x = tx - entity.w/2 - 0.01; else if(entity.vx < 0) entity.x = tx + TILE + entity.w/2 + 0.01; entity.vx = 0; left = entity.x - entity.w/2; right = entity.x + entity.w/2; } } }}
-
-    entity.y += entity.vy * dt; // vertical
-    left = entity.x - entity.w/2; right = entity.x + entity.w/2; top = entity.y - entity.h/2; bottom = entity.y + entity.h/2;
-    c0 = Math.floor(left/TILE); c1 = Math.floor(right/TILE); r0 = Math.floor(top/TILE); r1 = Math.floor(bottom/TILE);
-    entity.onGround = false;
-    for(let r=r0;r<=r1;r++){ for(let c=c0;c<=c1;c++){ if(r<0||r>=mapRows||c<0||c>=mapCols) continue; const t=map[r][c]; if(solidAt(t)){ const tx=c*TILE, ty=r*TILE; if(right > tx && left < tx+TILE && bottom > ty && top < ty+TILE){ if(entity.vy > 0){ entity.y = ty - entity.h/2 - 0.01; entity.vy = 0; entity.onGround = true; entity.doubleJump = true; } else if(entity.vy < 0){ entity.y = ty + TILE + entity.h/2 + 0.01; entity.vy = 0; } left = entity.x - entity.w/2; right = entity.x + entity.w/2; top = entity.y - entity.h/2; bottom = entity.y + entity.h/2; } } }}
-  }
-
-  function rectsOverlap(a,b){ return Math.abs(a.x-b.x)*2 < (a.w+b.w) && Math.abs(a.y-b.y)*2 < (a.h+b.h); }
-
-  function loseLife(){ lives--; if(lives<=0){ // reset to start of level
-      lives=3; coins=0; player.x=TILE*2; player.y=TILE*(mapRows-3); loadEnemies(); updateUI(); } else { player.x=TILE*2; player.y=TILE*(mapRows-3); player.vx=0; player.vy=0; } updateUI(); }
-
-  // update loop
-  let last = performance.now();
-  function loop(now){ const dt = Math.min(0.033,(now-last)/1000); last = now; update(dt); render(); requestAnimationFrame(loop); }
-
-  function update(dt){ // inputs
-    let move = 0; if(keys['arrowleft']||keys['a']) move -=1; if(keys['arrowright']||keys['d']) move +=1;
-    player.vx = move * player.speed;
-    player.vy += 1400 * dt;
-    const wantJump = keys[' '] || keys['arrowup'] || keys['w'];
-    if(wantJump){ if(player.onGround){ player.vy = -player.jumpPower; player.onGround=false; player.doubleJump=true; playSFX('jump'); } else if(player.doubleJump){ player.vy = -player.jumpPower*0.85; player.doubleJump=false; playSFX('jump'); } }
-
-    collide(player, dt);
-
-    // coin/spike/flag checks
-    const left = player.x - player.w/2, right = player.x + player.w/2, top = player.y - player.h/2, bottom = player.y + player.h/2;
-    const c0 = Math.floor(left/TILE), c1 = Math.floor(right/TILE), r0 = Math.floor(top/TILE), r1 = Math.floor(bottom/TILE);
-    for(let r=r0;r<=r1;r++){ for(let c=c0;c<=c1;c++){ if(r<0||r>=mapRows||c<0||c>=mapCols) continue; const t=map[r][c]; if(t===3){ map[r][c]=0; coins++; playSFX('coin'); updateUI(); } else if(t===4){ map[r][c]=0; loseLife(); } else if(t===6){ // flag -> checkpoint and level end
-              checkpoints[currentLevel] = {x:player.x,y:player.y,coins,lives}; localStorage.setItem('adv_platformer_checkpoint', JSON.stringify(checkpoints)); // move to next level
-              setTimeout(()=>{ nextLevel(); }, 400); } }}
-
-    // enemies
-    enemies.forEach(en=>{ en.x += en.dir * en.speed * dt; const frontX = en.x + en.dir*(en.w/2 + 2); const under = tileAt(frontX, en.y + en.h/2 + 6); if(!solidAt(under)) en.dir *= -1; const wall = tileAt(en.x + en.dir*(en.w/2 + 2), en.y); if(solidAt(wall)) en.dir *= -1; if(rectsOverlap(en, player)){ if(player.vy > 0){ en.dead = true; player.vy = -player.jumpPower*0.35; playSFX('stomp'); } else { loseLife(); } } }); enemies = enemies.filter(e=>!e.dead);
-
-    // camera
-    cameraX += ((player.x - cameraX) - canvas.width/4) * 0.08;
-  }
-
-  function nextLevel(){ currentLevel++; if(currentLevel >= levels.length) currentLevel = 0; loadLevel(currentLevel); }
-
-  // rendering (procedural pixel-art style)
-  function render(){ ctx.clearRect(0,0,W,H);
-    // sky
-    const g = ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#87ceeb'); g.addColorStop(1,'#6fb8e6'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-    drawParallax(cameraX);
-    // tiles
-    const startCol = Math.floor(cameraX / TILE); const colsOnScreen = Math.ceil(W / TILE) + 2;
+  function loadEnemies(){
+    enemies = [];
     for(let r=0;r<mapRows;r++){
-      for(let c=startCol; c<startCol+colsOnScreen; c++){
-        if(c<0||c>=mapCols) continue; const t = map[r][c]; const sx = c*TILE - cameraX; const sy = r*TILE;
-        if(t===1){ drawGround(sx,sy); } else if(t===2){ drawPlatform(sx,sy); } else if(t===3){ drawCoin(sx+TILE/2, sy+TILE/2); } else if(t===4){ drawSpike(sx,sy); } else if(t===6){ drawFlag(sx,sy); }
+      for(let c=0;c<mapCols;c++){
+        if(map[r][c] === 5){
+          enemies.push({x:c*TILE+TILE/2, y:r*TILE+TILE/2, w:36, h:36, dir:-1, speed:80});
+        }
       }
     }
-    // enemies
-    enemies.forEach(en=>{ const ex = en.x - cameraX - en.w/2, ey = en.y - en.h/2; drawEnemy(ex,ey,en.w,en.h); });
-    // player (animated)
-    drawPlayer(player.x - cameraX - player.w/2, player.y - player.h/2, player.w, player.h);
-    // HUD overlay
-    ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(8,8,220,64);
-    ctx.fillStyle='#fff'; ctx.font='16px system-ui'; ctx.fillText('Coins: '+coins, 18,30); ctx.fillText('Lives: '+lives, 18,52);
   }
 
-  function drawParallax(cx){ const p = cx*0.25; ctx.fillStyle='#b3e6a8'; ctx.beginPath(); ctx.ellipse(-100 - p%800, H-140, 300, 120, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='#9ed48f'; ctx.beginPath(); ctx.ellipse(200 - p%700, H-130, 280, 110, 0, 0, Math.PI*2); ctx.fill(); }
-
-  function drawGround(x,y){ ctx.fillStyle='#4a7a1b'; ctx.fillRect(x,y,TILE,TILE); ctx.fillStyle='#7ec850'; ctx.fillRect(x,y,TILE,TILE/3); }
-  function drawPlatform(x,y){ ctx.fillStyle='#8b5a2b'; ctx.fillRect(x+6,y+TILE/2,TILE-12,TILE/6); }
-  function drawCoin(cx,cy){ ctx.beginPath(); ctx.fillStyle='#ffd54a'; ctx.arc(cx,cy, TILE/5,0,Math.PI*2); ctx.fill(); ctx.closePath(); }
-  function drawSpike(x,y){ ctx.fillStyle='#d30d0d'; ctx.beginPath(); ctx.moveTo(x,y+TILE); ctx.lineTo(x+TILE/2,y+TILE/3); ctx.lineTo(x+TILE,y+TILE); ctx.fill(); ctx.closePath(); }
-  function drawFlag(x,y){ ctx.fillStyle='#b8860b'; ctx.fillRect(x+TILE-12,y+TILE/4,8,TILE*3/4); ctx.fillStyle='#ff4b4b'; ctx.fillRect(x+TILE-30,y+TILE/4,20,12); }
-
-  // simple pixel-ish player sprite animation based on state
-  let walkAnim = 0;
-  function drawPlayer(x,y,w,h){ // x,y top-left
-    // body
-    ctx.fillStyle='#1e3a8a'; ctx.fillRect(x,y,w,h);
-    // face / eye
-    ctx.fillStyle='#ffdd57'; ctx.fillRect(x+6,y+6,8,8);
-    // legs animate
-    walkAnim += 0.06; const step = Math.sin(walkAnim) * 4;
-    ctx.fillStyle='#0f2047'; ctx.fillRect(x+6,y+h-10,8,10); ctx.fillRect(x+w-14,y+h-10,8,10);
-    // small shadow
-    ctx.fillStyle='rgba(0,0,0,0.15)'; ctx.fillRect(x+4,y+h+2,w-8,6);
-  }
-
-  function drawEnemy(x,y,w,h){ ctx.fillStyle='#e24b4b'; ctx.fillRect(x,y,w,h); ctx.fillStyle='#000'; ctx.fillRect(x+6,y+8,6,6); }
-
-  // gameplay helpers
-  function loadEnemies(){ enemies.length=0; for(let r=0;r<mapRows;r++){ for(let c=0;c<mapCols;c++){ if(map[r][c]===5){ enemies.push({x:c*TILE+TILE/2,y:r*TILE+TILE/2,w:36,h:36,dir:-1,speed:80}); } }} }
   loadEnemies();
 
-  // painting helpers already above
+  // Collision helpers
+  function solidTile(t){ return t === 1 || t === 2; }
+  function tileAt(px, py){
+    const c = Math.floor(px / TILE), r = Math.floor(py / TILE);
+    if(c < 0 || c >= mapCols || r < 0 || r >= mapRows) return 0;
+    return map[r][c];
+  }
 
-  // SFX
-  function playSFX(type){ try{ if(!sfxOn) return; const now = audioCtx.currentTime; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); if(type==='jump'){ o.type='sine'; o.frequency.setValueAtTime(360,now); g.gain.value = 0.003; o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+0.12); }
-    else if(type==='coin'){ o.type='triangle'; o.frequency.setValueAtTime(880,now); g.gain.value = 0.002; o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+0.14); }
-    else if(type==='stomp'){ o.type='square'; o.frequency.setValueAtTime(160,now); g.gain.value = 0.004; o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+0.18); }
-  }catch(e){} }
+  function collideEntity(e, dt){
+    // horizontal move
+    e.x += e.vx * dt;
+    let left = e.x - e.w/2, right = e.x + e.w/2, top = e.y - e.h/2, bottom = e.y + e.h/2;
+    let c0 = Math.floor(left / TILE), c1 = Math.floor(right / TILE), r0 = Math.floor(top / TILE), r1 = Math.floor(bottom / TILE);
+    for(let r=r0; r<=r1; r++){
+      for(let c=c0; c<=c1; c++){
+        if(r<0||r>=mapRows||c<0||c>=mapCols) continue;
+        if(solidTile(map[r][c])){
+          const tx = c*TILE, ty = r*TILE;
+          if(right > tx && left < tx+TILE && bottom > ty && top < ty+TILE){
+            if(e.vx > 0) e.x = tx - e.w/2 - 0.01;
+            else if(e.vx < 0) e.x = tx + TILE + e.w/2 + 0.01;
+            e.vx = 0;
+            left = e.x - e.w/2; right = e.x + e.w/2;
+          }
+        }
+      }
+    }
 
-  // expose toggle for sfx from outer scope
+    // vertical move
+    e.y += e.vy * dt;
+    left = e.x - e.w/2; right = e.x + e.w/2; top = e.y - e.h/2; bottom = e.y + e.h/2;
+    c0 = Math.floor(left / TILE); c1 = Math.floor(right / TILE); r0 = Math.floor(top / TILE); r1 = Math.floor(bottom / TILE);
+    e.onGround = false;
+    for(let r=r0; r<=r1; r++){
+      for(let c=c0; c<=c1; c++){
+        if(r<0||r>=mapRows||c<0||c>=mapCols) continue;
+        if(solidTile(map[r][c])){
+          const tx = c*TILE, ty = r*TILE;
+          if(right > tx && left < tx+TILE && bottom > ty && top < ty+TILE){
+            if(e.vy > 0){ // falling
+              e.y = ty - e.h/2 - 0.01; e.vy = 0; e.onGround = true; e.doubleJump = true;
+            } else if(e.vy < 0){ // hitting head
+              e.y = ty + TILE + e.h/2 + 0.01; e.vy = 0;
+            }
+            top = e.y - e.h/2; bottom = e.y + e.h/2;
+          }
+        }
+      }
+    }
+  }
+
+  function rectsOverlap(a,b){
+    return Math.abs(a.x-b.x)*2 < (a.w+b.w) && Math.abs(a.y-b.y)*2 < (a.h+b.h);
+  }
+
+  function loseLife(){
+    lives--;
+    if(lives <= 0){
+      // reset level
+      lives = 3; coins = 0;
+      map = parseLevel(levelData[currentLevel]);
+      loadEnemies();
+      player.x = TILE*2; player.y = TILE*(mapRows-3); player.vx = 0; player.vy = 0;
+    } else {
+      // respawn near start
+      player.x = TILE*2; player.y = TILE*(mapRows-3); player.vx = 0; player.vy = 0;
+    }
+    updateHUD();
+  }
+
+  // Game loop
+  let lastTime = 0;
+  function loop(ts){
+    if(!lastTime) lastTime = ts;
+    const dt = Math.min(0.033, (ts - lastTime)/1000);
+    lastTime = ts;
+    if(running && !paused) {
+      update(dt);
+    }
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  // Update game state
+  function update(dt){
+    // Input
+    let move = 0;
+    if(keys['arrowleft'] || keys['a'] || touchLeft) move -= 1;
+    if(keys['arrowright'] || keys['d'] || touchRight) move += 1;
+    player.vx = move * player.speed;
+    if(move !== 0) player.facing = move > 0 ? 1 : -1;
+
+    // Gravity
+    player.vy += 1400 * dt;
+
+    const wantJump = keys[' '] || keys['arrowup'] || keys['w'] || touchJump;
+    if(wantJump){
+      if(player.onGround){
+        player.vy = -player.jumpPower; player.onGround = false; player.doubleJump = true;
+        playSFX('jump');
+      } else if(player.doubleJump){
+        player.vy = -player.jumpPower*0.85; player.doubleJump = false; playSFX('jump');
+      }
+    }
+
+    // Collide player with world
+    collideEntity(player, dt);
+
+    // Check for coins, spikes, flag
+    const left = player.x - player.w/2, right = player.x + player.w/2, top = player.y - player.h/2, bottom = player.y + player.h/2;
+    const c0 = Math.floor(left / TILE), c1 = Math.floor(right / TILE), r0 = Math.floor(top / TILE), r1 = Math.floor(bottom / TILE);
+    for(let r=r0; r<=r1; r++){
+      for(let c=c0; c<=c1; c++){
+        if(r<0||r>=mapRows||c<0||c>=mapCols) continue;
+        const t = map[r][c];
+        if(t === 3){ // coin
+          map[r][c] = 0; coins++; playSFX('coin'); updateHUD();
+        } else if(t === 4){ // spike
+          map[r][c] = 0; loseLife();
+        } else if(t === 6){ // flag - level end
+          // move to next level
+          setTimeout(()=>{ nextLevel(); }, 300);
+        }
+      }
+    }
+
+    // Update enemies
+    for(let i = enemies.length-1; i>=0; i--){
+      const en = enemies[i];
+      en.x += en.dir * en.speed * dt;
+      // check ground ahead
+      const frontX = en.x + en.dir * (en.w/2 + 2);
+      const underTile = tileAt(frontX, en.y + en.h/2 + 6);
+      if(!solidTile(underTile)) en.dir *= -1;
+      // check wall ahead
+      const wallTile = tileAt(en.x + en.dir*(en.w/2 + 2), en.y);
+      if(solidTile(wallTile)) en.dir *= -1;
+      // collision with player
+      if(rectsOverlap(en, player)){
+        if(player.vy > 0){ // stomp
+          en.dead = true; player.vy = -player.jumpPower*0.35; playSFX('stomp');
+        } else {
+          loseLife();
+        }
+      }
+    }
+    enemies = enemies.filter(e => !e.dead);
+
+    // Camera follow (smooth)
+    cameraX += ((player.x - cameraX) - canvas.width/4) * 0.08;
+    if(cameraX < 0) cameraX = 0;
+  }
+
+  // Render
+  function render(){
+    // scale for crispness on high-DPI browsers
+    const ratio = Math.min(2, window.devicePixelRatio || 1.0);
+    canvas.width = Math.round(canvas.clientWidth * ratio);
+    canvas.height = Math.round(canvas.clientHeight * ratio);
+    ctx.setTransform(ratio,0,0,ratio,0,0);
+    W = canvas.width / ratio; H = canvas.height / ratio;
+
+    // sky gradient
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue('--bg1').trim() || '#87ceeb');
+    g.addColorStop(1, getComputedStyle(document.documentElement).getPropertyValue('--bg2').trim() || '#6fb8e6');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+    // parallax hills
+    drawParallax(cameraX);
+
+    // tiles
+    const startCol = Math.floor(cameraX / TILE);
+    const colsOnScreen = Math.ceil(W / TILE) + 2;
+    for(let r=0; r<mapRows; r++){
+      for(let c = startCol; c < startCol + colsOnScreen; c++){
+        if(c < 0 || c >= mapCols) continue;
+        const t = map[r][c];
+        const sx = c*TILE - cameraX;
+        const sy = r*TILE;
+        if(t === 1){ drawGround(sx,sy); }
+        else if(t === 2){ drawPlatform(sx,sy); }
+        else if(t === 3){ drawCoin(sx+TILE/2, sy+TILE/2); }
+        else if(t === 4){ drawSpike(sx,sy); }
+        else if(t === 6){ drawFlag(sx,sy); }
+      }
+    }
+
+    // enemies
+    enemies.forEach(en => {
+      const ex = en.x - cameraX - en.w/2;
+      const ey = en.y - en.h/2;
+      drawEnemy(ex, ey, en.w, en.h);
+    });
+
+    // player
+    drawPlayer(player.x - cameraX - player.w/2, player.y - player.h/2, player.w, player.h);
+
+    // HUD in canvas (optional)
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillRect(10, 10, 200, 56);
+    ctx.fillStyle = '#000'; ctx.font = '16px system-ui'; ctx.fillText('Coins: ' + coins, 18, 32); ctx.fillText('Lives: ' + lives, 18, 52);
+
+    // If paused overlay
+    if(paused){
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = '34px system-ui';
+      ctx.fillText('Paused', W/2, H/2);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  // drawing helpers
+  function drawParallax(cx){
+    const p = cx * 0.2;
+    ctx.fillStyle = '#b3e6a8';
+    ctx.beginPath();
+    ctx.ellipse(-100 - p%800, H-140, 300, 120, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#9ed48f';
+    ctx.beginPath();
+    ctx.ellipse(200 - p%700, H-130, 280, 110, 0, 0, Math.PI*2); ctx.fill();
+  }
+
+  function drawGround(sx, sy){
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim() || '#4a7a1b';
+    ctx.fillRect(sx, sy, TILE, TILE);
+    ctx.fillStyle = '#7ec850'; ctx.fillRect(sx, sy, TILE, TILE/3);
+  }
+  function drawPlatform(sx, sy){
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--platform').trim() || '#8b5a2b';
+    ctx.fillRect(sx+6, sy+TILE/2, TILE-12, TILE/6);
+  }
+  function drawCoin(cx, cy){
+    ctx.beginPath(); ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--coin').trim() || '#ffd54a';
+    ctx.arc(cx, cy, TILE/6, 0, Math.PI*2); ctx.fill(); ctx.closePath();
+  }
+  function drawSpike(sx, sy){
+    ctx.fillStyle = '#d30d0d'; ctx.beginPath(); ctx.moveTo(sx, sy+TILE); ctx.lineTo(sx+TILE/2, sy+TILE/3); ctx.lineTo(sx+TILE, sy+TILE); ctx.fill(); ctx.closePath();
+  }
+  function drawFlag(sx, sy){
+    ctx.fillStyle = '#b8860b'; ctx.fillRect(sx+TILE-12, sy+TILE/4, 8, TILE*3/4);
+    ctx.fillStyle = '#ff4b4b'; ctx.fillRect(sx+TILE-30, sy+TILE/4, 20, 12);
+  }
+
+  // player draw (simple pixel-feel)
+  let walkAnim = 0;
+  function drawPlayer(x,y,w,h){
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--player').trim() || '#1e3a8a';
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = '#ffdd57'; ctx.fillRect(x+6, y+6, 8, 8);
+    walkAnim += 0.07;
+    ctx.fillStyle = '#0f2047'; ctx.fillRect(x+6, y+h-12, 8, 12); ctx.fillRect(x+w-14, y+h-12, 8, 12);
+    ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(x+4, y+h+4, w-8, 6);
+  }
+
+  function drawEnemy(x,y,w,h){
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--enemy').trim() || '#e24b4b';
+    ctx.fillRect(x,y,w,h);
+    ctx.fillStyle = '#000'; ctx.fillRect(x+8, y+8, 6, 6);
+  }
+
+  // Simple audio SFX (tiny oscillator blips)
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   let sfxOn = true;
+  function playSFX(type){
+    if(!sfxOn) return;
+    try{
+      const now = audioCtx.currentTime;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      if(type === 'jump'){ o.type='sine'; o.frequency.setValueAtTime(360, now); g.gain.value = 0.003; o.start(now); o.stop(now + 0.12); }
+      else if(type === 'coin'){ o.type='triangle'; o.frequency.setValueAtTime(880, now); g.gain.value = 0.002; o.start(now); o.stop(now + 0.14); }
+      else if(type === 'stomp'){ o.type='square'; o.frequency.setValueAtTime(180, now); g.gain.value = 0.004; o.start(now); o.stop(now + 0.18); }
+    } catch(e) {}
+  }
 
-  // download project helper: embed current levels JSON into the HTML template
-  function buildSelfContainedHTML(){ const levelsJSON = JSON.stringify(levels); const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Platformer Project</title></head><body><pre>Levels JSON (paste into editor):</pre><textarea style="width:100%;height:80vh">${levelsJSON}</textarea></body></html>`; return html; }
+  function updateHUD(){
+    levelLabel.textContent = 'Level ' + (currentLevel + 1);
+    scoreLabel.textContent = 'Coins: ' + coins;
+    livesLabel.textContent = 'Lives: ' + lives;
+  }
 
-  // load initial UI
-  updateUI();
+  function nextLevel(){
+    currentLevel++;
+    if(currentLevel >= levelData.length) {
+      // if no more levels, show victory screen
+      running = false;
+      startScreen.style.display = 'block';
+      startScreen.querySelector('h1').textContent = 'You Win!';
+      startScreen.querySelector('.muted').textContent = 'Nice job — you finished all levels.';
+      playBtn.textContent = 'Play Again';
+      return;
+    }
+    map = parseLevel(levelData[currentLevel]);
+    mapRows = map.length; mapCols = map[0].length;
+    player.x = TILE*2; player.y = TILE*(mapRows-3);
+    player.vx = 0; player.vy = 0;
+    coins = 0; lives = 3;
+    loadEnemies();
+    updateHUD();
+  }
+
+  function resetLevel(){
+    map = parseLevel(levelData[currentLevel]);
+    mapRows = map.length; mapCols = map[0].length;
+    player.x = TILE*2; player.y = TILE*(mapRows-3);
+    player.vx = 0; player.vy = 0;
+    coins = 0; lives = 3;
+    loadEnemies();
+    updateHUD();
+  }
+
+  // Start game
+  function startGame(){
+    startScreen.style.display = 'none';
+    running = true; paused = false;
+    updateHUD();
+    // ensure audio unlocked by user gesture
+    try{ if(audioCtx.state === 'suspended') audioCtx.resume(); } catch(e){}
+  }
+
+  // Auto-show start screen first, but allow immediate start on load
+  // Expose a short delay so the player sees the start screen
+  // Optionally auto-start after 300ms for immediate play:
+  window.addEventListener('load', () => {
+    // auto-start if user prefers immediate play:
+    // startGame();
+  });
+
+  // Auto-start if user clicks Play
+  playBtn.focus();
+  // kick-off main loop
   requestAnimationFrame(loop);
 
-  // window resize handling
-  window.addEventListener('resize', ()=>{ /* canvas scaling could be added */ });
+  // Helpful: start automatically if user clicks anywhere (gesture for audio unlock)
+  canvas.addEventListener('pointerdown', () => {
+    if(!running) startGame();
+  });
+
+  // Responsive: scale canvas element to available width while preserving aspect
+  function resizeCanvas(){
+    const wrap = document.getElementById('gameWrap');
+    const wCSS = Math.min(1200, window.innerWidth - 64);
+    canvas.style.width = wCSS + 'px';
+    canvas.style.height = Math.round(wCSS * 9/16) + 'px';
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // Allow tapping anywhere to start
+  document.body.addEventListener('keydown', (e) => {
+    if(!running && (e.key === ' ' || e.key === 'Enter')) startGame();
+  });
 
 })();
 </script>
