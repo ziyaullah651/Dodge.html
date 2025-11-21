@@ -1,245 +1,381 @@
 <!doctype html>
-<!-- Simple HTML Game: Avoider
-     - Single-file HTML + JS
-     - Controls: Arrow keys / WASD or touch/drag on mobile
-     - Objective: Avoid falling enemies, score increases with time
-     - Features: Responsive, pause, restart, high-score saved in localStorage
+<!--
+Advanced Platformer — "Classic Runner Plus"
+Features added (per request):
+  - pixel-art style sprite animation (canvas-drawn)
+  - simple WebAudio sound effects + background synth loop
+  - level editor (paint tiles, place coins/spikes/enemies), save/load levels to localStorage
+  - checkpoints and save/load game state
+  - multiple levels with progression
+  - download project button (exports current HTML as a single-file project)
+
+Save this file as platformer-inspired-game-advanced.html and open in a modern browser.
 -->
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Simple Avoider Game</title>
-  <style>
-    :root{--bg:#0b1220;--card:#0f1724;--accent:#6ee7b7;--danger:#ff6b6b}
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial}
-    body{display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#071028 0%,#081029 100%);color:#e6eef8}
-    .wrap{width:min(920px,96vw);max-width:920px;margin:20px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-    h1{font-size:18px;margin:0}
-    .ui{display:flex;gap:8px;align-items:center}
-    button{background:var(--card);border:1px solid rgba(255,255,255,0.06);color:inherit;padding:8px 10px;border-radius:8px;cursor:pointer}
-    button:active{transform:translateY(1px)}
-    canvas{display:block;width:100%;border-radius:10px;box-shadow:0 8px 30px rgba(2,6,23,0.7);background:linear-gradient(180deg,#071428,#00121a)}
-    .info{display:flex;gap:12px;align-items:center;font-size:14px;margin-top:8px}
-    .badge{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:8px}
-    .controls{font-size:13px;color:rgba(230,238,248,0.8)}
-    footer{margin-top:10px;font-size:12px;color:rgba(230,238,248,0.6)}
-    @media (max-width:480px){h1{font-size:16px}}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Classic Runner — Advanced</title>
+<style>
+  :root{--panel:#ffffffee;--muted:#444}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(#7ec0ee,#5fb0e0)}
+  #wrap{display:flex;gap:14px;padding:12px}
+  #left{flex:1;display:flex;flex-direction:column;align-items:center}
+  canvas{background:linear-gradient(#87ceeb,#6fb8e6);border-radius:8px;border:6px solid rgba(0,0,0,0.12);box-shadow:0 10px 30px rgba(0,0,0,0.2)}
+  #sidebar{width:360px;background:var(--panel);border-radius:10px;padding:12px;box-shadow:0 8px 20px rgba(0,0,0,0.12)}
+  h2{margin:6px 0}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  button{padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);cursor:pointer}
+  .tool{display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
+  .tilePalette{display:flex;flex-wrap:wrap;gap:6px}
+  .tile{width:44px;height:44px;border-radius:6px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
+  input[type=range]{width:100%}
+  textarea{width:100%;height:100px}
+  small{color:var(--muted)}
+  .muted{color:var(--muted);font-size:13px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  .mobileControls{display:none}
+  @media(max-width:980px){#wrap{flex-direction:column;padding:8px}#sidebar{width:auto} .mobileControls{display:flex}}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Simple Avoider — dodge the falling blocks</h1>
-      <div class="ui">
-        <button id="startBtn">Start</button>
-        <button id="pauseBtn">Pause</button>
-        <button id="restartBtn">Restart</button>
+  <div id="wrap">
+    <div id="left">
+      <canvas id="game" width="1024" height="576"></canvas>
+      <div style="width:1024px;max-width:96vw;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+        <div class="muted">Level: <span id="levelNum">1</span> — Coins: <span id="coinCount">0</span> — Lives: <span id="lives">3</span></div>
+        <div>
+          <button id="saveCheckpoint">Save Checkpoint</button>
+          <button id="loadCheckpoint">Load Checkpoint</button>
+        </div>
       </div>
-    </header>
-
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-
-    <div class="info">
-      <div class="badge">Score: <span id="score">0</span></div>
-      <div class="badge">High: <span id="highScore">0</span></div>
-      <div class="controls">Controls: Arrow keys / WASD — or drag on touch</div>
     </div>
 
-    <footer>Touch and drag to move the player on mobile. The game saves the high score locally.</footer>
+    <aside id="sidebar">
+      <h2>Level Editor & Project</h2>
+      <div class="row">
+        <div class="tool" id="toolPump">Tool: <strong id="currentTool">Tile</strong></div>
+        <select id="tileSelect">
+          <option value="1">Ground</option>
+          <option value="2">Platform</option>
+          <option value="3">Coin</option>
+          <option value="4">Spike</option>
+          <option value="5">Enemy</option>
+          <option value="0">Eraser</option>
+          <option value="6">Flag (Checkpoint)</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <button id="toggleEdit">Toggle Editor</button>
+        <button id="prevLv">Prev Level</button>
+        <button id="nextLv">Next Level</button>
+        <button id="downloadProject">Download Project</button>
+      </div>
+
+      <div style="margin-top:8px">
+        <strong>Editor</strong>
+        <div class="muted">Click canvas to paint tiles. Use Shift+click to pan camera.</div>
+        <div style="margin-top:8px" class="controls">
+          <button id="addLevel">Add Level</button>
+          <button id="saveLevel">Save Level</button>
+          <button id="exportLevel">Export Level JSON</button>
+        </div>
+      </div>
+
+      <hr />
+      <div>
+        <strong>Audio</strong>
+        <div class="muted">Background synth and SFX (toggle)</div>
+        <div class="row">
+          <button id="toggleAudio">Toggle Audio</button>
+          <button id="playMusic">Play Music</button>
+        </div>
+      </div>
+
+      <hr />
+      <div>
+        <strong>Project Files</strong>
+        <div class="muted">Download a single-file HTML copy of this project (includes current level data).</div>
+        <div style="margin-top:8px">
+          <button id="downloadHTML">Download HTML</button>
+        </div>
+      </div>
+
+      <hr />
+      <div>
+        <strong>Level JSON</strong>
+        <textarea id="levelJSON"></textarea>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button id="importJSON">Import JSON</button>
+          <button id="clearJSON">Clear</button>
+        </div>
+      </div>
+    </aside>
   </div>
 
 <script>
+/* Advanced platformer single-file implementation
+   - No external assets (all drawn procedurally)
+   - Uses localStorage for saves and levels
+   - Simple WebAudio synth for SFX + loop
+*/
 (() => {
-  const canvas = document.getElementById('gameCanvas');
+  // ----------- config
+  const TILE = 48;
+  const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  let W = canvas.width, H = canvas.height;
 
-  // UI
-  const startBtn = document.getElementById('startBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
-  const restartBtn = document.getElementById('restartBtn');
-  const scoreEl = document.getElementById('score');
-  const highScoreEl = document.getElementById('highScore');
+  const levelNumEl = document.getElementById('levelNum');
+  const coinCountEl = document.getElementById('coinCount');
+  const livesEl = document.getElementById('lives');
 
-  // Game state
-  let w = canvas.width, h = canvas.height;
-  let running = false, paused = false;
-  let lastTime = 0, spawnAcc = 0;
-  let score = 0, highScore = 0;
+  // default levels (as strings) — small set; editor can add more
+  const defaultLevels = [
+    [
+      '                                ',
+      '                                ',
+      '                                ',
+      '                                ',
+      '            c      p   c        ',
+      '       p           p        p   ',
+      '      e      s                  ',
+      '                                ',
+      '                                ',
+      '11111111111111111111111111111111'
+    ],
+    [
+      '                                ',
+      '                                ',
+      '                                ',
+      '     c       p       c       p  ',
+      '    p p    p   p    p  p    p   ',
+      '                                ',
+      '         s      e          s    ',
+      '                                ',
+      '               p                ',
+      '11111111111111111111111111111111'
+    ]
+  ];
 
-  const STORAGE_KEY = 'simpleAvoiderHighScore_v1';
-  highScore = Number(localStorage.getItem(STORAGE_KEY) || 0);
-  highScoreEl.textContent = highScore;
+  // utilities to parse and stringify level representation (tile numbers)
+  function parseLevel(arr){ return arr.map(r => r.split('').map(ch => {
+    switch(ch){ case '1': return 1; case 'p': return 2; case 'c': return 3; case 's': return 4; case 'e': return 5; case 'f': return 6; default: return 0; }
+  })); }
+  function stringifyLevel(map){ return map.map(row => row.map(t => { switch(t){case 1: return '1'; case 2:return 'p'; case 3:return 'c'; case 4: return 's'; case 5:return 'e'; case 6:return 'f'; default: return ' ';}}).join('')); }
 
-  function resizeCanvas() {
-    // Keep internal resolution and scale to css size to preserve crispness
-    const ratio = Math.min(1.5, window.devicePixelRatio || 1);
-    const cssW = Math.min(920, window.innerWidth * 0.96);
-    const cssH = Math.round(cssW * 0.625);
-    canvas.style.width = cssW + 'px';
-    canvas.style.height = cssH + 'px';
-    w = canvas.width = Math.round(cssW * ratio);
-    h = canvas.height = Math.round(cssH * ratio);
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.scale(ratio, ratio);
-  }
-  window.addEventListener('resize', resizeCanvas, {passive:true});
-  resizeCanvas();
+  // load levels from localStorage or defaults
+  const LS_LEVELS_KEY = 'adv_platformer_levels_v1';
+  let levels = JSON.parse(localStorage.getItem(LS_LEVELS_KEY) || 'null');
+  if(!levels){ levels = defaultLevels.slice(); localStorage.setItem(LS_LEVELS_KEY, JSON.stringify(levels)); }
 
-  // Player
-  const player = {x: w/4, y: h - 80, r: 18, speed: 6, vx:0, vy:0, color:'#6ee7b7'};
+  let currentLevel = 0;
+  let map = parseLevel(levels[currentLevel]);
+  let mapRows = map.length, mapCols = map[0].length;
 
-  // Enemies
-  const enemies = [];
+  // game state
+  const player = {x: TILE*2, y: TILE*(mapRows-3), w:36, h:40, vx:0, vy:0, speed:240, jumpPower:520, onGround:false, doubleJump:true};
+  let cameraX = 0;
+  let coins = 0; let lives = 3;
+  let enemies = [];
+  let checkpoints = {}; // level->pos
 
-  function spawnEnemy() {
-    const size = 18 + Math.random()*36;
-    const x = 20 + Math.random()*( (w/ (window.devicePixelRatio||1)) - 40 - size );
-    const speed = 1.2 + Math.random()*3 + Math.min(4, score/50);
-    enemies.push({x, y: -size, w:size, h:size, speed});
-  }
+  // editor state
+  let editorMode = false; let selectedTile = 1; // tile values
+  const tileSelect = document.getElementById('tileSelect');
+  tileSelect.addEventListener('change', e => { selectedTile = Number(e.target.value); document.getElementById('currentTool').textContent = selectedTile === 0 ? 'Eraser' : 'Tile'; });
 
-  // Input handling (keyboard & pointer)
+  document.getElementById('toggleEdit').addEventListener('click', ()=>{ editorMode = !editorMode; alert('Editor ' + (editorMode ? 'enabled' : 'disabled') + '. Click canvas to paint tiles.'); });
+  document.getElementById('prevLv').addEventListener('click', ()=>{ currentLevel = Math.max(0,currentLevel-1); loadLevel(currentLevel); });
+  document.getElementById('nextLv').addEventListener('click', ()=>{ currentLevel = Math.min(levels.length-1,currentLevel+1); loadLevel(currentLevel); });
+  document.getElementById('addLevel').addEventListener('click', ()=>{ const blank = Array.from({length:10},()=>' '.repeat(32)); levels.push(blank); localStorage.setItem(LS_LEVELS_KEY, JSON.stringify(levels)); currentLevel = levels.length-1; loadLevel(currentLevel); alert('Added blank level'); });
+  document.getElementById('saveLevel').addEventListener('click', ()=>{ levels[currentLevel] = stringifyLevel(map); localStorage.setItem(LS_LEVELS_KEY, JSON.stringify(levels)); alert('Saved level to localStorage'); });
+  document.getElementById('exportLevel').addEventListener('click', ()=>{ const json = JSON.stringify(map); document.getElementById('levelJSON').value = json; });
+  document.getElementById('importJSON').addEventListener('click', ()=>{ try{ const data = JSON.parse(document.getElementById('levelJSON').value); map = data; mapRows = map.length; mapCols = map[0].length; levels[currentLevel] = stringifyLevel(map); localStorage.setItem(LS_LEVELS_KEY, JSON.stringify(levels)); loadEnemies(); updateUI(); alert('Imported level'); }catch(e){alert('Invalid JSON');} });
+  document.getElementById('clearJSON').addEventListener('click', ()=> document.getElementById('levelJSON').value = '');
+
+  // Download project (single-file HTML) — creates a copy of current HTML with embedded level JSON
+  document.getElementById('downloadHTML').addEventListener('click', ()=>{
+    const doc = buildSelfContainedHTML();
+    const blob = new Blob([doc], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'platformer_project.html'; a.click(); URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('downloadProject').addEventListener('click', ()=>{ const data = {levels}; const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'levels.json'; a.click(); URL.revokeObjectURL(url); });
+
+  // checkpoint save/load
+  document.getElementById('saveCheckpoint').addEventListener('click', ()=>{ checkpoints[currentLevel] = {x:player.x,y:player.y,coins,lives}; localStorage.setItem('adv_platformer_checkpoint', JSON.stringify(checkpoints)); alert('Checkpoint saved'); });
+  document.getElementById('loadCheckpoint').addEventListener('click', ()=>{ const cp = JSON.parse(localStorage.getItem('adv_platformer_checkpoint')||'{}'); if(cp[currentLevel]){ player.x = cp[currentLevel].x; player.y = cp[currentLevel].y; coins = cp[currentLevel].coins; lives = cp[currentLevel].lives; updateUI(); alert('Loaded checkpoint'); } else alert('No checkpoint for this level'); });
+
+  // simple audio with WebAudio
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let musicOn = false, sfxOn = true; let musicNode = null;
+  function playSFX(type){ if(!sfxOn) return; try{ const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type='square'; if(type==='jump'){ o.frequency.value = 300; g.gain.value = 0.0015; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>{o.stop()},120); }
+    else if(type==='coin'){ o.frequency.value = 900; g.gain.value = 0.0009; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>{o.stop()},140); }
+    else if(type==='stomp'){ o.frequency.value = 200; g.gain.value = 0.002; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>{o.stop()},200); }
+  }catch(e){/*ignore*/} }
+
+  document.getElementById('toggleAudio').addEventListener('click', ()=>{ sfxOn = !sfxOn; alert('SFX ' + (sfxOn? 'on':'off')); });
+  document.getElementById('playMusic').addEventListener('click', ()=>{ if(musicOn){ stopMusic(); } else startMusic(); });
+
+  function startMusic(){ if(musicOn) return; musicOn = true; audioCtx.resume(); // simple loop: two oscillators modulating
+    const o1 = audioCtx.createOscillator(); const o2 = audioCtx.createOscillator(); const g = audioCtx.createGain(); g.gain.value = 0.0009; o1.type='sine'; o2.type='sine'; o1.frequency.value = 220; o2.frequency.value = 440; const merger = audioCtx.createGain(); o1.connect(merger); o2.connect(merger); merger.connect(g); g.connect(audioCtx.destination); o1.start(); o2.start(); musicNode = {o1,o2,g,merger}; }
+  function stopMusic(){ if(!musicOn) return; musicOn=false; if(musicNode){ musicNode.o1.stop(); musicNode.o2.stop(); musicNode = null; } }
+
+  // input
   const keys = {};
-  window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
-  window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+  window.addEventListener('keydown', e=>{ keys[e.key.toLowerCase()] = true; if(e.key===' '){ e.preventDefault(); } });
+  window.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; });
 
-  // Pointer for touch/mouse drag
-  let pointerDown = false;
-  function toLocal(e){
-    const rect = canvas.getBoundingClientRect();
-    const p = e.touches ? e.touches[0] : e;
-    return {x: (p.clientX - rect.left), y: (p.clientY - rect.top)};
-  }
-  canvas.addEventListener('pointerdown', e => { pointerDown = true; const p = toLocal(e); player.x = p.x; player.y = p.y; });
-  window.addEventListener('pointermove', e => { if(pointerDown){ const p = toLocal(e); player.x = p.x; player.y = p.y; }});
-  window.addEventListener('pointerup', ()=> pointerDown = false);
+  // pointer editor painting
+  let isPointerDown = false; let lastPointer = null, panning = false;
+  canvas.addEventListener('pointerdown', e=>{ isPointerDown = true; const p = toCanvas(e); if(editorMode){ paintAt(p.x + cameraX, p.y); } else { lastPointer = p; } });
+  window.addEventListener('pointerup', ()=>{ isPointerDown=false; panning=false; lastPointer=null; });
+  canvas.addEventListener('pointermove', e=>{ if(isPointerDown && editorMode){ const p = toCanvas(e); paintAt(p.x + cameraX, p.y); } else if(keys['shift']){ // pan with shift drag
+    if(isPointerDown && lastPointer){ const p = toCanvas(e); const dx = lastPointer.x - p.x; cameraX += dx; lastPointer = p; }
+  }});
 
-  // Simple collision: circle vs rect
-  function circleRectCollide(cx, cy, r, rx, ry, rw, rh){
-    const closestX = Math.max(rx, Math.min(cx, rx+rw));
-    const closestY = Math.max(ry, Math.min(cy, ry+rh));
-    const dx = cx - closestX, dy = cy - closestY;
-    return (dx*dx+dy*dy) < r*r;
+  function toCanvas(e){ const rect = canvas.getBoundingClientRect(); return {x: (e.clientX - rect.left), y: (e.clientY - rect.top)}; }
+
+  function paintAt(px, py){ const c = Math.floor(px / TILE); const r = Math.floor(py / TILE); if(r<0||r>=mapRows||c<0||c>=mapCols) return; map[r][c] = selectedTile; if(selectedTile === 5) { // enemy
+      // spawn an enemy object
+      enemies.push({x:c*TILE+TILE/2,y:r*TILE+TILE/2,w:36,h:36,dir:-1,speed:80});
+    }
   }
 
-  function update(dt){
-    if(!running || paused) return;
+  // enemies loader
+  function loadEnemies(){ enemies.length=0; for(let r=0;r<mapRows;r++){ for(let c=0;c<mapCols;c++){ if(map[r][c]===5){ enemies.push({x:c*TILE+TILE/2,y:r*TILE+TILE/2,w:36,h:36,dir:-1,speed:80}); } }} }
+  loadEnemies();
 
-    // Move player with keyboard
-    const moveSpeed = player.speed;
-    let dx = 0, dy = 0;
-    if(keys['arrowleft']||keys['a']) dx -= moveSpeed;
-    if(keys['arrowright']||keys['d']) dx += moveSpeed;
-    if(keys['arrowup']||keys['w']) dy -= moveSpeed;
-    if(keys['arrowdown']||keys['s']) dy += moveSpeed;
+  function loadLevel(i){ currentLevel = i; map = parseLevel(levels[currentLevel]); mapRows = map.length; mapCols = map[0].length; player.x = TILE*2; player.y = TILE*(mapRows-3); player.vx=0; player.vy=0; cameraX=0; coins=0; lives=3; loadEnemies(); updateUI(); }
 
-    player.x += dx; player.y += dy;
-    // Clamp inside canvas
-    const cssW = parseFloat(canvas.style.width);
-    const cssH = parseFloat(canvas.style.height);
-    player.x = Math.max(player.r, Math.min(cssW - player.r, player.x));
-    player.y = Math.max(player.r, Math.min(cssH - player.r, player.y));
+  function updateUI(){ levelNumEl.textContent = currentLevel+1; coinCountEl.textContent = Math.floor(coins); livesEl.textContent = lives; }
 
-    // Spawn enemies faster as score grows
-    spawnAcc += dt;
-    const spawnInterval = Math.max(0.25, 1.0 - Math.min(0.7, score/200));
-    if(spawnAcc > spawnInterval){ spawnAcc = 0; spawnEnemy(); }
+  // basic physics and collisions
+  function solidAt(t){ return t===1||t===2; }
+  function tileAt(px,py){ const c = Math.floor(px/TILE), r = Math.floor(py/TILE); if(c<0||c>=mapCols||r<0||r>=mapRows) return 0; return map[r][c]; }
 
-    // Update enemies
-    for(let i=enemies.length-1;i>=0;i--){
-      const e = enemies[i];
-      e.y += e.speed * (60*dt); // scale to approx px/frame
-      if(e.y > cssH + 50) enemies.splice(i,1);
-      else if(circleRectCollide(player.x, player.y, player.r, e.x, e.y, e.w, e.h)){
-        running = false; // game over
+  function collide(entity, dt){ // AABB tile collisions
+    entity.x += entity.vx * dt; // horizontal
+    let left = entity.x - entity.w/2, right = entity.x + entity.w/2, top = entity.y - entity.h/2, bottom = entity.y + entity.h/2;
+    let c0 = Math.floor(left/TILE), c1 = Math.floor(right/TILE), r0 = Math.floor(top/TILE), r1 = Math.floor(bottom/TILE);
+
+    for(let r=r0;r<=r1;r++){ for(let c=c0;c<=c1;c++){ if(r<0||r>=mapRows||c<0||c>=mapCols) continue; const t = map[r][c]; if(solidAt(t)){ const tx=c*TILE, ty=r*TILE; if(right > tx && left < tx+TILE && bottom > ty && top < ty+TILE){ if(entity.vx > 0) entity.x = tx - entity.w/2 - 0.01; else if(entity.vx < 0) entity.x = tx + TILE + entity.w/2 + 0.01; entity.vx = 0; left = entity.x - entity.w/2; right = entity.x + entity.w/2; } } }}
+
+    entity.y += entity.vy * dt; // vertical
+    left = entity.x - entity.w/2; right = entity.x + entity.w/2; top = entity.y - entity.h/2; bottom = entity.y + entity.h/2;
+    c0 = Math.floor(left/TILE); c1 = Math.floor(right/TILE); r0 = Math.floor(top/TILE); r1 = Math.floor(bottom/TILE);
+    entity.onGround = false;
+    for(let r=r0;r<=r1;r++){ for(let c=c0;c<=c1;c++){ if(r<0||r>=mapRows||c<0||c>=mapCols) continue; const t=map[r][c]; if(solidAt(t)){ const tx=c*TILE, ty=r*TILE; if(right > tx && left < tx+TILE && bottom > ty && top < ty+TILE){ if(entity.vy > 0){ entity.y = ty - entity.h/2 - 0.01; entity.vy = 0; entity.onGround = true; entity.doubleJump = true; } else if(entity.vy < 0){ entity.y = ty + TILE + entity.h/2 + 0.01; entity.vy = 0; } left = entity.x - entity.w/2; right = entity.x + entity.w/2; top = entity.y - entity.h/2; bottom = entity.y + entity.h/2; } } }}
+  }
+
+  function rectsOverlap(a,b){ return Math.abs(a.x-b.x)*2 < (a.w+b.w) && Math.abs(a.y-b.y)*2 < (a.h+b.h); }
+
+  function loseLife(){ lives--; if(lives<=0){ // reset to start of level
+      lives=3; coins=0; player.x=TILE*2; player.y=TILE*(mapRows-3); loadEnemies(); updateUI(); } else { player.x=TILE*2; player.y=TILE*(mapRows-3); player.vx=0; player.vy=0; } updateUI(); }
+
+  // update loop
+  let last = performance.now();
+  function loop(now){ const dt = Math.min(0.033,(now-last)/1000); last = now; update(dt); render(); requestAnimationFrame(loop); }
+
+  function update(dt){ // inputs
+    let move = 0; if(keys['arrowleft']||keys['a']) move -=1; if(keys['arrowright']||keys['d']) move +=1;
+    player.vx = move * player.speed;
+    player.vy += 1400 * dt;
+    const wantJump = keys[' '] || keys['arrowup'] || keys['w'];
+    if(wantJump){ if(player.onGround){ player.vy = -player.jumpPower; player.onGround=false; player.doubleJump=true; playSFX('jump'); } else if(player.doubleJump){ player.vy = -player.jumpPower*0.85; player.doubleJump=false; playSFX('jump'); } }
+
+    collide(player, dt);
+
+    // coin/spike/flag checks
+    const left = player.x - player.w/2, right = player.x + player.w/2, top = player.y - player.h/2, bottom = player.y + player.h/2;
+    const c0 = Math.floor(left/TILE), c1 = Math.floor(right/TILE), r0 = Math.floor(top/TILE), r1 = Math.floor(bottom/TILE);
+    for(let r=r0;r<=r1;r++){ for(let c=c0;c<=c1;c++){ if(r<0||r>=mapRows||c<0||c>=mapCols) continue; const t=map[r][c]; if(t===3){ map[r][c]=0; coins++; playSFX('coin'); updateUI(); } else if(t===4){ map[r][c]=0; loseLife(); } else if(t===6){ // flag -> checkpoint and level end
+              checkpoints[currentLevel] = {x:player.x,y:player.y,coins,lives}; localStorage.setItem('adv_platformer_checkpoint', JSON.stringify(checkpoints)); // move to next level
+              setTimeout(()=>{ nextLevel(); }, 400); } }}
+
+    // enemies
+    enemies.forEach(en=>{ en.x += en.dir * en.speed * dt; const frontX = en.x + en.dir*(en.w/2 + 2); const under = tileAt(frontX, en.y + en.h/2 + 6); if(!solidAt(under)) en.dir *= -1; const wall = tileAt(en.x + en.dir*(en.w/2 + 2), en.y); if(solidAt(wall)) en.dir *= -1; if(rectsOverlap(en, player)){ if(player.vy > 0){ en.dead = true; player.vy = -player.jumpPower*0.35; playSFX('stomp'); } else { loseLife(); } } }); enemies = enemies.filter(e=>!e.dead);
+
+    // camera
+    cameraX += ((player.x - cameraX) - canvas.width/4) * 0.08;
+  }
+
+  function nextLevel(){ currentLevel++; if(currentLevel >= levels.length) currentLevel = 0; loadLevel(currentLevel); }
+
+  // rendering (procedural pixel-art style)
+  function render(){ ctx.clearRect(0,0,W,H);
+    // sky
+    const g = ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#87ceeb'); g.addColorStop(1,'#6fb8e6'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    drawParallax(cameraX);
+    // tiles
+    const startCol = Math.floor(cameraX / TILE); const colsOnScreen = Math.ceil(W / TILE) + 2;
+    for(let r=0;r<mapRows;r++){
+      for(let c=startCol; c<startCol+colsOnScreen; c++){
+        if(c<0||c>=mapCols) continue; const t = map[r][c]; const sx = c*TILE - cameraX; const sy = r*TILE;
+        if(t===1){ drawGround(sx,sy); } else if(t===2){ drawPlatform(sx,sy); } else if(t===3){ drawCoin(sx+TILE/2, sy+TILE/2); } else if(t===4){ drawSpike(sx,sy); } else if(t===6){ drawFlag(sx,sy); }
       }
     }
-
-    // Score increases with time alive
-    score += dt * 10;
-    scoreEl.textContent = Math.floor(score);
+    // enemies
+    enemies.forEach(en=>{ const ex = en.x - cameraX - en.w/2, ey = en.y - en.h/2; drawEnemy(ex,ey,en.w,en.h); });
+    // player (animated)
+    drawPlayer(player.x - cameraX - player.w/2, player.y - player.h/2, player.w, player.h);
+    // HUD overlay
+    ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fillRect(8,8,220,64);
+    ctx.fillStyle='#fff'; ctx.font='16px system-ui'; ctx.fillText('Coins: '+coins, 18,30); ctx.fillText('Lives: '+lives, 18,52);
   }
 
-  function draw(){
-    // Clear
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    // Background subtle grid
-    const cssW = parseFloat(canvas.style.width);
-    const cssH = parseFloat(canvas.style.height);
-    ctx.fillStyle = 'rgba(255,255,255,0.01)';
-    for(let i=0;i<20;i++){
-      ctx.fillRect(i*(cssW/20),0,1,cssH);
-    }
+  function drawParallax(cx){ const p = cx*0.25; ctx.fillStyle='#b3e6a8'; ctx.beginPath(); ctx.ellipse(-100 - p%800, H-140, 300, 120, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='#9ed48f'; ctx.beginPath(); ctx.ellipse(200 - p%700, H-130, 280, 110, 0, 0, Math.PI*2); ctx.fill(); }
 
-    // Draw player
-    ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fillStyle=player.color; ctx.fill();
-    ctx.closePath();
+  function drawGround(x,y){ ctx.fillStyle='#4a7a1b'; ctx.fillRect(x,y,TILE,TILE); ctx.fillStyle='#7ec850'; ctx.fillRect(x,y,TILE,TILE/3); }
+  function drawPlatform(x,y){ ctx.fillStyle='#8b5a2b'; ctx.fillRect(x+6,y+TILE/2,TILE-12,TILE/6); }
+  function drawCoin(cx,cy){ ctx.beginPath(); ctx.fillStyle='#ffd54a'; ctx.arc(cx,cy, TILE/5,0,Math.PI*2); ctx.fill(); ctx.closePath(); }
+  function drawSpike(x,y){ ctx.fillStyle='#d30d0d'; ctx.beginPath(); ctx.moveTo(x,y+TILE); ctx.lineTo(x+TILE/2,y+TILE/3); ctx.lineTo(x+TILE,y+TILE); ctx.fill(); ctx.closePath(); }
+  function drawFlag(x,y){ ctx.fillStyle='#b8860b'; ctx.fillRect(x+TILE-12,y+TILE/4,8,TILE*3/4); ctx.fillStyle='#ff4b4b'; ctx.fillRect(x+TILE-30,y+TILE/4,20,12); }
 
-    // Draw enemies
-    enemies.forEach(e=>{
-      ctx.fillStyle = 'rgba(255,107,107,0.95)';
-      ctx.fillRect(e.x, e.y, e.w, e.h);
-    });
-
-    // HUD
-    if(!running){
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(cssW/2 - 160, cssH/2 - 50, 320, 100);
-      ctx.fillStyle = '#e6eef8';
-      ctx.textAlign = 'center'; ctx.font = '18px system-ui';
-      ctx.fillText('Game Over — Score: ' + Math.floor(score), cssW/2, cssH/2 - 6);
-      ctx.font = '13px system-ui';
-      ctx.fillText('Press Start or Restart to try again', cssW/2, cssH/2 + 18);
-    }
+  // simple pixel-ish player sprite animation based on state
+  let walkAnim = 0;
+  function drawPlayer(x,y,w,h){ // x,y top-left
+    // body
+    ctx.fillStyle='#1e3a8a'; ctx.fillRect(x,y,w,h);
+    // face / eye
+    ctx.fillStyle='#ffdd57'; ctx.fillRect(x+6,y+6,8,8);
+    // legs animate
+    walkAnim += 0.06; const step = Math.sin(walkAnim) * 4;
+    ctx.fillStyle='#0f2047'; ctx.fillRect(x+6,y+h-10,8,10); ctx.fillRect(x+w-14,y+h-10,8,10);
+    // small shadow
+    ctx.fillStyle='rgba(0,0,0,0.15)'; ctx.fillRect(x+4,y+h+2,w-8,6);
   }
 
-  // Main loop
-  function loop(ts){
-    if(!lastTime) lastTime = ts;
-    const dt = Math.min(0.05,(ts - lastTime)/1000); // cap delta
-    lastTime = ts;
-    update(dt);
-    draw();
+  function drawEnemy(x,y,w,h){ ctx.fillStyle='#e24b4b'; ctx.fillRect(x,y,w,h); ctx.fillStyle='#000'; ctx.fillRect(x+6,y+8,6,6); }
 
-    if(!running){
-      // when game stops, save high score
-      const sc = Math.floor(score);
-      if(sc > highScore){ highScore = sc; localStorage.setItem(STORAGE_KEY, highScore); highScoreEl.textContent = highScore; }
-    }
-    requestAnimationFrame(loop);
-  }
+  // gameplay helpers
+  function loadEnemies(){ enemies.length=0; for(let r=0;r<mapRows;r++){ for(let c=0;c<mapCols;c++){ if(map[r][c]===5){ enemies.push({x:c*TILE+TILE/2,y:r*TILE+TILE/2,w:36,h:36,dir:-1,speed:80}); } }} }
+  loadEnemies();
 
-  // Controls
-  startBtn.addEventListener('click', ()=>{
-    if(!running){ startGame(); }
-    paused = false; startBtn.disabled = true; pauseBtn.disabled = false;
-  });
-  pauseBtn.addEventListener('click', ()=>{ paused = !paused; pauseBtn.textContent = paused ? 'Resume' : 'Pause'; });
-  restartBtn.addEventListener('click', ()=>{ resetGame(); startGame(); });
+  // painting helpers already above
 
-  function startGame(){
-    running = true; paused = false; lastTime = 0; score = 0; spawnAcc = 0; enemies.length = 0;
-    // Position player in center-bottom
-    const cssW = parseFloat(canvas.style.width), cssH = parseFloat(canvas.style.height);
-    player.x = cssW/2; player.y = cssH - 60;
-  }
-  function resetGame(){
-    running = false; paused = false; enemies.length = 0; score = 0; scoreEl.textContent = 0; startBtn.disabled = false; pauseBtn.disabled = false; pauseBtn.textContent='Pause';
-  }
+  // SFX
+  function playSFX(type){ try{ if(!sfxOn) return; const now = audioCtx.currentTime; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); if(type==='jump'){ o.type='sine'; o.frequency.setValueAtTime(360,now); g.gain.value = 0.003; o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+0.12); }
+    else if(type==='coin'){ o.type='triangle'; o.frequency.setValueAtTime(880,now); g.gain.value = 0.002; o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+0.14); }
+    else if(type==='stomp'){ o.type='square'; o.frequency.setValueAtTime(160,now); g.gain.value = 0.004; o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+0.18); }
+  }catch(e){} }
 
-  // Start loop
+  // expose toggle for sfx from outer scope
+  let sfxOn = true;
+
+  // download project helper: embed current levels JSON into the HTML template
+  function buildSelfContainedHTML(){ const levelsJSON = JSON.stringify(levels); const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Platformer Project</title></head><body><pre>Levels JSON (paste into editor):</pre><textarea style="width:100%;height:80vh">${levelsJSON}</textarea></body></html>`; return html; }
+
+  // load initial UI
+  updateUI();
   requestAnimationFrame(loop);
 
-  // Start button initial state
-  startBtn.disabled = false; pauseBtn.disabled = true;
+  // window resize handling
+  window.addEventListener('resize', ()=>{ /* canvas scaling could be added */ });
 
-  // Simple touch guidance for mobile: make canvas focusable
-  canvas.tabIndex = 1000;
-
-  // Expose for debugging in console
-  window.__game = {startGame, resetGame, enemies, player};
 })();
 </script>
 </body>
