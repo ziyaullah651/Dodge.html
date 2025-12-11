@@ -42,7 +42,7 @@
       </div>
 
       <div class="footer">
-        <div>Made By Ziyaullah — single file</div>
+        <div>Made By Ziyaullah</div>
         <div><small>Tap to jump ▸</small></div>
       </div>
     </div>
@@ -79,9 +79,9 @@
 
   // Player
   const player = {
-    x: 80,
+    x: 100,
     y: 0,
-    r: 18,
+    r: 20,
     vy: 0,
     gravity: 1100, // px/s^2
     jumpSpeed: -420,
@@ -97,8 +97,8 @@
   const obstacles = []
 
   function spawnObstacle(){
-    const h = 20 + Math.random()*70
-    const w = 18 + Math.random()*70
+    const h = 24 + Math.random()*70
+    const w = 22 + Math.random()*70
     const y = groundY() - h
     obstacles.push({x: canvas.width/(window.devicePixelRatio||1) + 20, y, w, h, passed:false})
   }
