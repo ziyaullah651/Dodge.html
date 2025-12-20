@@ -97,8 +97,8 @@
   const obstacles = []
 
   function spawnObstacle(){
-    const h = 18+ Math.random()*70
-    const w = 14 + Math.random()*70
+    const h = 8+ Math.random()*70
+    const w = 6 + Math.random()*70
     const y = groundY() - h
     obstacles.push({x: canvas.width/(window.devicePixelRatio||1) + 20, y, w, h, passed:false})
   }
