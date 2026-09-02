@@ -985,32 +985,15 @@ function update(dt){
 
     }
 
+/* Player physics */
 
-    /* Player physics */
+updateJump(dt);
 
-    player.vy +=
-        player.gravity*dt;
+player.vy +=
+    player.gravity*dt;
 
-    player.y +=
-        player.vy*dt;
-
-    const gy =
-        groundY()-player.r;
-
-    if(player.y >= gy){
-
-        player.y = gy;
-
-        player.vy = 0;
-
-        player.grounded = true;
-
-    }else{
-
-        player.grounded = false;
-
-    }
-
+player.y +=
+    player.vy*dt;
 
     /* Running animation */
 
