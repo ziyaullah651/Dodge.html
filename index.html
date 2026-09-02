@@ -1,12 +1,19 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
 
 <title>Universal Dodge</title>
 
 <style>
+
 :root{
     --bg1:#071024;
     --bg2:#081428;
@@ -24,13 +31,19 @@
     -webkit-tap-highlight-color:transparent;
 }
 
-html,body{
+html,
+body{
     margin:0;
     width:100%;
     min-height:100%;
     font-family:Inter,system-ui,Arial,sans-serif;
     color:var(--text);
-    background:linear-gradient(180deg,var(--bg1),var(--bg2));
+    background:
+        linear-gradient(
+            180deg,
+            var(--bg1),
+            var(--bg2)
+        );
 }
 
 body.light{
@@ -114,11 +127,17 @@ button{
     font-weight:700;
     cursor:pointer;
     transition:.2s;
+    user-select:none;
+    touch-action:none;
 }
 
 button:hover{
     transform:translateY(-1px);
     filter:brightness(1.1);
+}
+
+button:active{
+    transform:scale(.97);
 }
 
 button.danger{
@@ -199,6 +218,13 @@ button.gold{
     display:none;
 }
 
+.jumpHint{
+    margin-top:7px;
+    color:#94a3b8;
+    font-size:12px;
+    text-align:center;
+}
+
 @media(max-width:600px){
 
     .wrap{
@@ -212,6 +238,10 @@ button.gold{
 
     h1{
         font-size:16px;
+    }
+
+    header{
+        align-items:flex-start;
     }
 
     #gameCanvas{
@@ -239,9 +269,16 @@ button.gold{
         font-size:18px;
         background:#0891b2;
     }
+
+    .footer{
+        flex-direction:column;
+        text-align:center;
+    }
 }
+
 </style>
 </head>
+
 
 <body>
 
@@ -255,79 +292,149 @@ button.gold{
 
 <div class="topStats">
 
-<div class="stat">🏆 Best: <span id="bestScore">0</span></div>
+<div class="stat">
+🏆 Best:
+<span id="bestScore">0</span>
+</div>
 
-<div class="stat">⭐ Score: <span id="scoreTop">0</span></div>
+<div class="stat">
+⭐ Score:
+<span id="scoreTop">0</span>
+</div>
 
-<div class="stat">❤️ <span id="livesTop">3</span></div>
+<div class="stat">
+❤️ <span id="livesTop">3</span>
+</div>
 
-<div class="stat">⚡ Level: <span id="levelTop">1</span></div>
+<div class="stat">
+⚡ Level:
+<span id="levelTop">1</span>
+</div>
 
 </div>
 
 </header>
 
+
 <canvas
-id="gameCanvas"
-width="1000"
-height="700"
-aria-label="Universal Dodge game">
+    id="gameCanvas"
+    width="1000"
+    height="700"
+    aria-label="Universal Dodge game">
 </canvas>
+
 
 <div class="controls">
 
-<button id="startBtn">▶ Start</button>
+<button id="startBtn">
+▶ Start
+</button>
 
-<button id="pauseBtn" class="secondary">⏸ Pause</button>
+<button
+    id="pauseBtn"
+    class="secondary">
+⏸ Pause
+</button>
 
-<button id="restartBtn" class="danger">↻ Restart</button>
+<button
+    id="restartBtn"
+    class="danger">
+↻ Restart
+</button>
 
-<button id="themeBtn" class="gold">🌙 Theme</button>
+<button
+    id="themeBtn"
+    class="gold">
+🌙 Theme
+</button>
 
 </div>
 
-<button id="mobileJump">⬆ TAP TO JUMP</button>
+
+<button id="mobileJump">
+⬆ HOLD TO JUMP
+</button>
+
+<div class="jumpHint">
+Hold the button longer for a higher jump
+</div>
+
 
 <div class="info">
-🎮 Space / ↑ / Click / Touch = Jump &nbsp; | &nbsp;
-P = Pause &nbsp; | &nbsp;
-Collect 🪙 coins and ⭐ power-ups!
+
+🎮
+<strong>Space / ↑ / Mouse / Touch</strong>
+= Jump
+&nbsp; | &nbsp;
+
+<strong>P</strong>
+= Pause
+&nbsp; | &nbsp;
+
+🪙 Collect coins
+&nbsp; | &nbsp;
+
+⭐ Collect shields
+
 </div>
+
 
 <div class="footer">
 
-<div>Made By <strong>Ziyaullah</strong></div>
+<div>
+Made By <strong>Ziyaullah</strong>
+</div>
 
-<div>🔥 Survive as long as possible!</div>
-
+<div>
+🔥 Survive as long as possible!
 </div>
 
 </div>
+
+</div>
 </div>
 
 
-<!-- START / GAME OVER MENU -->
+<!-- =========================
+     START / GAME OVER MENU
+========================= -->
 
-<div id="overlay" class="overlay">
+<div
+    id="overlay"
+    class="overlay">
 
 <div class="menu">
 
-<h2 id="menuTitle">🚀 Universal Dodge</h2>
+<h2 id="menuTitle">
+🚀 Universal Dodge
+</h2>
 
 <p id="menuText">
 Dodge obstacles, collect coins and survive!
 </p>
 
-<div id="menuScore" class="scoreBig">
+<div
+    id="menuScore"
+    class="scoreBig">
+
 Best Score: 0
+
 </div>
 
-<button id="menuStart" class="bigButton">
+<button
+    id="menuStart"
+    class="bigButton">
+
 ▶ START GAME
+
 </button>
 
-<button id="menuTheme" class="bigButton secondary">
+<button
+    id="menuTheme"
+    class="bigButton secondary">
+
 🌙 Change Theme
+
 </button>
 
 </div>
@@ -342,84 +449,128 @@ Best Score: 0
 "use strict";
 
 
-/* ==============================
+/* =====================================================
    ELEMENTS
-============================== */
+===================================================== */
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const canvas =
+    document.getElementById("gameCanvas");
 
-const scoreTop = document.getElementById("scoreTop");
-const bestScoreEl = document.getElementById("bestScore");
-const livesTop = document.getElementById("livesTop");
-const levelTop = document.getElementById("levelTop");
-
-const startBtn = document.getElementById("startBtn");
-const pauseBtn = document.getElementById("pauseBtn");
-const restartBtn = document.getElementById("restartBtn");
-const themeBtn = document.getElementById("themeBtn");
-const mobileJump = document.getElementById("mobileJump");
-
-const overlay = document.getElementById("overlay");
-const menuTitle = document.getElementById("menuTitle");
-const menuText = document.getElementById("menuText");
-const menuScore = document.getElementById("menuScore");
-const menuStart = document.getElementById("menuStart");
-const menuTheme = document.getElementById("menuTheme");
+const ctx =
+    canvas.getContext("2d");
 
 
-/* ==============================
-   YOUR CHARACTER IMAGE
-============================== */
+const scoreTop =
+    document.getElementById("scoreTop");
+
+const bestScoreEl =
+    document.getElementById("bestScore");
+
+const livesTop =
+    document.getElementById("livesTop");
+
+const levelTop =
+    document.getElementById("levelTop");
+
+
+const startBtn =
+    document.getElementById("startBtn");
+
+const pauseBtn =
+    document.getElementById("pauseBtn");
+
+const restartBtn =
+    document.getElementById("restartBtn");
+
+const themeBtn =
+    document.getElementById("themeBtn");
+
+const mobileJump =
+    document.getElementById("mobileJump");
+
+
+const overlay =
+    document.getElementById("overlay");
+
+const menuTitle =
+    document.getElementById("menuTitle");
+
+const menuText =
+    document.getElementById("menuText");
+
+const menuScore =
+    document.getElementById("menuScore");
+
+const menuStart =
+    document.getElementById("menuStart");
+
+const menuTheme =
+    document.getElementById("menuTheme");
+
+
+/* =====================================================
+   PLAYER IMAGE
+===================================================== */
 
 /*
-   IMPORTANT:
-
-   Put your image in the same GitHub folder as this HTML file.
+   Put your character image beside index.html.
 
    Example:
 
    index.html
    player.png
 
-   Then change:
+   Then this works automatically.
 
-   "player.png"
-
-   to your actual filename.
-
-   You can also use:
+   If your image is in:
 
    images/player.png
 
+   change the path below to:
+
+   images/player.png
 */
 
-const PLAYER_IMAGE_PATH = "player.png";
+const PLAYER_IMAGE_PATH =
+    "player.png";
 
-const playerImage = new Image();
-playerImage.src = PLAYER_IMAGE_PATH;
 
-let playerImageLoaded = false;
+const playerImage =
+    new Image();
+
+playerImage.src =
+    PLAYER_IMAGE_PATH;
+
+let playerImageLoaded =
+    false;
 
 playerImage.onload = () => {
+
     playerImageLoaded = true;
+
 };
 
 
-/* ==============================
-   CANVAS / DPI
-============================== */
+/* =====================================================
+   CANVAS DPI
+===================================================== */
 
 let dpr = 1;
 
+
 function resizeCanvas(){
 
-    const rect = canvas.getBoundingClientRect();
+    const rect =
+        canvas.getBoundingClientRect();
 
-    dpr = window.devicePixelRatio || 1;
+    dpr =
+        window.devicePixelRatio || 1;
 
-    canvas.width = Math.round(rect.width * dpr);
-    canvas.height = Math.round(rect.height * dpr);
+    canvas.width =
+        Math.round(rect.width * dpr);
+
+    canvas.height =
+        Math.round(rect.height * dpr);
 
     ctx.setTransform(
         dpr,
@@ -429,9 +580,14 @@ function resizeCanvas(){
         0,
         0
     );
+
 }
 
-window.addEventListener("resize", resizeCanvas);
+
+window.addEventListener(
+    "resize",
+    resizeCanvas
+);
 
 resizeCanvas();
 
@@ -439,48 +595,78 @@ resizeCanvas();
 function width(){
 
     return canvas.width / dpr;
+
 }
+
 
 function height(){
 
     return canvas.height / dpr;
+
 }
 
 
-/* ==============================
-   GAME VARIABLES
-============================== */
+/* =====================================================
+   GAME STATE
+===================================================== */
 
 let running = false;
+
 let paused = false;
 
 let lastTime = 0;
 
 let score = 0;
-let bestScore = Number(
-    localStorage.getItem("universalDodgeBest") || 0
-);
+
+let bestScore =
+    Number(
+        localStorage.getItem(
+            "universalDodgeBest"
+        ) || 0
+    );
 
 let lives = 3;
+
 let level = 1;
 
 let spawnTimer = 0;
+
 let spawnInterval = 1300;
 
 let coinTimer = 0;
+
 let powerTimer = 0;
 
 let levelTimer = 0;
 
+
+/* =====================================================
+   VARIABLE JUMP SYSTEM
+===================================================== */
+
+/*
+   jumpHeld = true while Space,
+   mouse or touch is being held.
+
+   The longer you hold it,
+   the higher the player jumps.
+*/
+
+let jumpHeld = false;
+
+
+/* =====================================================
+   SHIELD
+===================================================== */
+
 let invincible = false;
+
 let shieldTimer = 0;
 
-let gameStartedOnce = false;
 
-
-/* ==============================
+/* =====================================================
    PLAYER
-============================== */
+===================================================== */
 
 const player = {
 
@@ -505,33 +691,45 @@ const player = {
 };
 
 
-/* ==============================
-   OBJECT ARRAYS
-============================== */
+/* =====================================================
+   OBJECTS
+===================================================== */
 
 const obstacles = [];
+
 const coins = [];
+
 const powerups = [];
 
 
-/* ==============================
+/* =====================================================
    AUDIO
-============================== */
+===================================================== */
 
 let audioContext = null;
+
 
 function initAudio(){
 
     if(!audioContext){
 
         audioContext =
-            new (window.AudioContext ||
-            window.webkitAudioContext)();
+            new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+
     }
 
-    if(audioContext.state === "suspended"){
+    if(
+        audioContext.state ===
+        "suspended"
+    ){
+
         audioContext.resume();
+
     }
+
 }
 
 
@@ -552,46 +750,72 @@ function beep(
         const gain =
             audioContext.createGain();
 
-        oscillator.type = type;
+        oscillator.type =
+            type;
 
         oscillator.frequency.value =
             frequency;
 
-        gain.gain.value = volume;
+        gain.gain.value =
+            volume;
 
         oscillator.connect(gain);
 
-        gain.connect(audioContext.destination);
+        gain.connect(
+            audioContext.destination
+        );
 
         oscillator.start();
 
         gain.gain.exponentialRampToValueAtTime(
             .001,
-            audioContext.currentTime + duration
+            audioContext.currentTime +
+            duration
         );
 
         oscillator.stop(
-            audioContext.currentTime + duration
+            audioContext.currentTime +
+            duration
         );
 
-    }catch(e){}
+    }
+    catch(e){}
 
 }
 
 
 function jumpSound(){
 
-    beep(520,.12,"square",.04);
+    beep(
+        520,
+        .12,
+        "square",
+        .04
+    );
 
 }
 
 
 function coinSound(){
 
-    beep(900,.08,"sine",.05);
+    beep(
+        900,
+        .08,
+        "sine",
+        .05
+    );
 
     setTimeout(
-        () => beep(1200,.08,"sine",.04),
+        () => {
+
+            beep(
+                1200,
+                .08,
+                "sine",
+                .04
+            );
+
+        },
         70
     );
 
@@ -600,17 +824,36 @@ function coinSound(){
 
 function hitSound(){
 
-    beep(120,.25,"sawtooth",.06);
+    beep(
+        120,
+        .25,
+        "sawtooth",
+        .06
+    );
 
 }
 
 
 function gameOverSound(){
 
-    beep(250,.2,"sawtooth",.05);
+    beep(
+        250,
+        .2,
+        "sawtooth",
+        .05
+    );
 
     setTimeout(
-        () => beep(100,.35,"sawtooth",.05),
+        () => {
+
+            beep(
+                100,
+                .35,
+                "sawtooth",
+                .05
+            );
+
+        },
         150
     );
 
@@ -619,19 +862,33 @@ function gameOverSound(){
 
 function powerSound(){
 
-    beep(700,.1,"sine",.05);
+    beep(
+        700,
+        .1,
+        "sine",
+        .05
+    );
 
     setTimeout(
-        () => beep(1000,.15,"sine",.05),
+        () => {
+
+            beep(
+                1000,
+                .15,
+                "sine",
+                .05
+            );
+
+        },
         100
     );
 
 }
 
 
-/* ==============================
+/* =====================================================
    GROUND
-============================== */
+===================================================== */
 
 function groundY(){
 
@@ -640,9 +897,9 @@ function groundY(){
 }
 
 
-/* ==============================
-   RESET
-============================== */
+/* =====================================================
+   RESET GAME
+===================================================== */
 
 function resetGame(){
 
@@ -652,11 +909,13 @@ function resetGame(){
 
     powerups.length = 0;
 
+
     score = 0;
 
     lives = 3;
 
     level = 1;
+
 
     spawnTimer = 0;
 
@@ -666,29 +925,41 @@ function resetGame(){
 
     levelTimer = 0;
 
+
     spawnInterval = 1300;
+
 
     invincible = false;
 
     shieldTimer = 0;
 
-    player.x = Math.max(80,width()*.12);
+
+    jumpHeld = false;
+
+
+    player.x =
+        Math.max(
+            80,
+            width() * .12
+        );
 
     player.y =
-        groundY() - player.r;
+        groundY() -
+        player.r;
 
     player.vy = 0;
 
     player.grounded = true;
+
 
     updateUI();
 
 }
 
 
-/* ==============================
+/* =====================================================
    START GAME
-============================== */
+===================================================== */
 
 function startGame(){
 
@@ -700,51 +971,67 @@ function startGame(){
 
     paused = false;
 
-    gameStartedOnce = true;
+    overlay.classList.add(
+        "hidden"
+    );
 
-    overlay.classList.add("hidden");
+    pauseBtn.textContent =
+        "⏸ Pause";
 
-    pauseBtn.textContent = "⏸ Pause";
+    lastTime =
+        performance.now();
 
-    lastTime = performance.now();
-
-    requestAnimationFrame(loop);
+    requestAnimationFrame(
+        loop
+    );
 
 }
 
 
-/* ==============================
+/* =====================================================
    PAUSE
-============================== */
+===================================================== */
 
 function pauseGame(){
 
-    if(!running) return;
+    if(!running)
+        return;
 
-    paused = !paused;
+    paused =
+        !paused;
 
     pauseBtn.textContent =
-        paused ? "▶ Resume" : "⏸ Pause";
+        paused
+        ? "▶ Resume"
+        : "⏸ Pause";
 
 }
 
 
-/* ==============================
+/* =====================================================
    GAME OVER
-============================== */
+===================================================== */
 
 function gameOver(){
 
     running = false;
 
+    jumpHeld = false;
+
     gameOverSound();
+
 
     const finalScore =
         Math.floor(score);
 
-    if(finalScore > bestScore){
 
-        bestScore = finalScore;
+    if(
+        finalScore >
+        bestScore
+    ){
+
+        bestScore =
+            finalScore;
 
         localStorage.setItem(
             "universalDodgeBest",
@@ -753,76 +1040,185 @@ function gameOver(){
 
     }
 
+
     updateUI();
+
 
     menuTitle.textContent =
         "💥 GAME OVER";
 
+
     menuText.textContent =
-        "You survived until Level " + level + "!";
+        "You survived until Level " +
+        level +
+        "!";
+
 
     menuScore.innerHTML =
-        "Score: " + finalScore +
+        "Score: " +
+        finalScore +
         "<br><small>🏆 Best: " +
         bestScore +
         "</small>";
 
+
     menuStart.textContent =
         "↻ PLAY AGAIN";
 
-    overlay.classList.remove("hidden");
+
+    overlay.classList.remove(
+        "hidden"
+    );
 
 }
 
 
-/* ==============================
-   JUMP
-============================== */
+/* =====================================================
+   START HOLDING JUMP
+===================================================== */
 
-function jump(){
+function startJump(){
 
     initAudio();
+
 
     if(!running){
 
         startGame();
 
         return;
+
     }
 
-    if(paused) return;
 
-    if(player.grounded){
+    if(paused)
+        return;
 
-        player.vy =
-            player.jumpSpeed;
 
-        player.grounded = false;
+    /*
+       Prevent repeatedly restarting
+       the jump while the button is held.
+    */
 
-        jumpSound();
+    if(!jumpHeld){
+
+        jumpHeld = true;
+
+
+        /*
+           Only jump from the ground.
+        */
+
+        if(player.grounded){
+
+            player.vy =
+                player.jumpSpeed;
+
+            player.grounded =
+                false;
+
+            jumpSound();
+
+        }
 
     }
 
 }
 
 
-/* ==============================
+/* =====================================================
+   RELEASE JUMP
+===================================================== */
+
+function releaseJump(){
+
+    jumpHeld = false;
+
+
+    /*
+       If the player releases early,
+       reduce upward velocity.
+
+       This creates the small-jump effect.
+    */
+
+    if(
+        player.vy < -180
+    ){
+
+        player.vy =
+            -180;
+
+    }
+
+}
+
+
+/* =====================================================
+   VARIABLE HEIGHT JUMP
+===================================================== */
+
+function updateJump(dt){
+
+    /*
+       While holding the jump button
+       and moving upward, keep adding
+       upward force.
+
+       This means:
+
+       Quick tap = short jump
+
+       Longer hold = higher jump
+    */
+
+    if(
+        jumpHeld &&
+        !player.grounded &&
+        player.vy < 0
+    ){
+
+        player.vy -=
+            850 * dt;
+
+
+        /*
+           Maximum upward speed.
+        */
+
+        player.vy =
+            Math.max(
+                player.vy,
+                -750
+            );
+
+    }
+
+}
+
+
+/* =====================================================
    OBSTACLE
-============================== */
+===================================================== */
 
 function spawnObstacle(){
 
     const h =
-        25 + Math.random()*75;
+        25 +
+        Math.random() * 75;
 
     const w =
-        25 + Math.random()*60;
+        25 +
+        Math.random() * 60;
+
 
     obstacles.push({
 
-        x:width()+30,
+        x:
+            width() + 30,
 
-        y:groundY()-h,
+        y:
+            groundY() - h,
 
         w:w,
 
@@ -835,20 +1231,22 @@ function spawnObstacle(){
 }
 
 
-/* ==============================
+/* =====================================================
    COIN
-============================== */
+===================================================== */
 
 function spawnCoin(){
 
     const y =
         groundY() -
         80 -
-        Math.random()*170;
+        Math.random() * 170;
+
 
     coins.push({
 
-        x:width()+30,
+        x:
+            width() + 30,
 
         y:y,
 
@@ -861,20 +1259,22 @@ function spawnCoin(){
 }
 
 
-/* ==============================
+/* =====================================================
    POWER-UP
-============================== */
+===================================================== */
 
 function spawnPowerup(){
 
     const y =
         groundY() -
         90 -
-        Math.random()*130;
+        Math.random() * 130;
+
 
     powerups.push({
 
-        x:width()+30,
+        x:
+            width() + 30,
 
         y:y,
 
@@ -885,9 +1285,9 @@ function spawnPowerup(){
 }
 
 
-/* ==============================
+/* =====================================================
    COLLISION
-============================== */
+===================================================== */
 
 function circleRectCollision(
     cx,
@@ -899,44 +1299,60 @@ function circleRectCollision(
     const nearestX =
         Math.max(
             rect.x,
-            Math.min(cx,rect.x+rect.w)
+            Math.min(
+                cx,
+                rect.x + rect.w
+            )
         );
+
 
     const nearestY =
         Math.max(
             rect.y,
-            Math.min(cy,rect.y+rect.h)
+            Math.min(
+                cy,
+                rect.y + rect.h
+            )
         );
 
+
     const dx =
-        cx-nearestX;
+        cx - nearestX;
 
     const dy =
-        cy-nearestY;
+        cy - nearestY;
+
 
     return (
-        dx*dx + dy*dy <
-        radius*radius
+        dx * dx +
+        dy * dy <
+        radius * radius
     );
 
 }
 
 
-/* ==============================
-   UPDATE
-============================== */
+/* =====================================================
+   UPDATE GAME
+===================================================== */
 
 function update(dt){
 
-    /* Level */
+    /* ======================
+       LEVEL
+    ====================== */
 
     levelTimer += dt;
 
-    if(levelTimer >= 10){
+
+    if(
+        levelTimer >= 10
+    ){
 
         levelTimer = 0;
 
         level++;
+
 
         spawnInterval =
             Math.max(
@@ -947,11 +1363,18 @@ function update(dt){
     }
 
 
-    /* Spawn obstacles */
+    /* ======================
+       SPAWN OBSTACLES
+    ====================== */
 
-    spawnTimer += dt*1000;
+    spawnTimer +=
+        dt * 1000;
 
-    if(spawnTimer >= spawnInterval){
+
+    if(
+        spawnTimer >=
+        spawnInterval
+    ){
 
         spawnTimer = 0;
 
@@ -960,11 +1383,17 @@ function update(dt){
     }
 
 
-    /* Spawn coins */
+    /* ======================
+       SPAWN COINS
+    ====================== */
 
-    coinTimer += dt*1000;
+    coinTimer +=
+        dt * 1000;
 
-    if(coinTimer >= 1000){
+
+    if(
+        coinTimer >= 1000
+    ){
 
         coinTimer = 0;
 
@@ -973,11 +1402,17 @@ function update(dt){
     }
 
 
-    /* Spawn powerups */
+    /* ======================
+       SPAWN POWERUPS
+    ====================== */
 
-    powerTimer += dt*1000;
+    powerTimer +=
+        dt * 1000;
 
-    if(powerTimer >= 7000){
+
+    if(
+        powerTimer >= 7000
+    ){
 
         powerTimer = 0;
 
@@ -985,46 +1420,106 @@ function update(dt){
 
     }
 
-/* Player physics */
 
-updateJump(dt);
+    /* ======================
+       PLAYER PHYSICS
+    ====================== */
 
-player.vy +=
-    player.gravity*dt;
+    /*
+       IMPORTANT:
+       Variable jump is updated
+       before gravity.
+    */
 
-player.y +=
-    player.vy*dt;
+    updateJump(dt);
 
-    /* Running animation */
 
-    player.frameTimer += dt;
+    player.vy +=
+        player.gravity * dt;
 
-    if(player.frameTimer > .12){
 
-        player.frameTimer = 0;
+    player.y +=
+        player.vy * dt;
 
-        player.frame =
-            (player.frame+1)%2;
+
+    const gy =
+        groundY() -
+        player.r;
+
+
+    if(
+        player.y >= gy
+    ){
+
+        player.y = gy;
+
+        player.vy = 0;
+
+        player.grounded = true;
+
+    }
+    else{
+
+        player.grounded = false;
 
     }
 
 
-    /* Speed */
+    /* ======================
+       RUNNING ANIMATION
+    ====================== */
+
+    player.frameTimer += dt;
+
+
+    if(
+        player.frameTimer >
+        .12
+    ){
+
+        player.frameTimer = 0;
+
+        player.frame =
+            (player.frame + 1) % 2;
+
+    }
+
+
+    /* ======================
+       SPEED
+    ====================== */
 
     const speed =
         230 +
-        level*18 +
-        Math.min(score*.4,300);
+        level * 18 +
+        Math.min(
+            score * .4,
+            300
+        );
 
 
-    /* Obstacles */
+    /* ======================
+       OBSTACLES
+    ====================== */
 
-    for(let i=obstacles.length-1;i>=0;i--){
+    for(
+        let i =
+            obstacles.length - 1;
+        i >= 0;
+        i--
+    ){
 
-        const ob = obstacles[i];
+        const ob =
+            obstacles[i];
 
-        ob.x -= speed*dt;
 
+        ob.x -=
+            speed * dt;
+
+
+        /*
+           Collision
+        */
 
         if(
             !invincible &&
@@ -1036,22 +1531,31 @@ player.y +=
             )
         ){
 
-            obstacles.splice(i,1);
+            obstacles.splice(
+                i,
+                1
+            );
+
 
             lives--;
 
+
             hitSound();
+
+
+            /*
+               Temporary invincibility
+               after getting hit.
+            */
 
             invincible = true;
 
-            setTimeout(
-                () => {
-                    invincible = false;
-                },
-                1200
-            );
+            shieldTimer = 1.2;
 
-            if(lives <= 0){
+
+            if(
+                lives <= 0
+            ){
 
                 gameOver();
 
@@ -1062,9 +1566,14 @@ player.y +=
         }
 
 
+        /*
+           Score for passing obstacle.
+        */
+
         if(
             !ob.passed &&
-            ob.x+ob.w < player.x
+            ob.x + ob.w <
+            player.x
         ){
 
             ob.passed = true;
@@ -1074,76 +1583,133 @@ player.y +=
         }
 
 
-        if(ob.x+ob.w < -60){
+        /*
+           Remove old obstacle.
+        */
 
-            obstacles.splice(i,1);
+        if(
+            ob.x + ob.w <
+            -60
+        ){
+
+            obstacles.splice(
+                i,
+                1
+            );
 
         }
 
     }
 
 
-    /* Coins */
+    /* ======================
+       COINS
+    ====================== */
 
-    for(let i=coins.length-1;i>=0;i--){
+    for(
+        let i =
+            coins.length - 1;
+        i >= 0;
+        i--
+    ){
 
-        const coin = coins[i];
+        const coin =
+            coins[i];
 
-        coin.x -= speed*dt;
 
-        coin.rotation += dt*5;
+        coin.x -=
+            speed * dt;
+
+
+        coin.rotation +=
+            dt * 5;
 
 
         const dx =
-            coin.x-player.x;
+            coin.x -
+            player.x;
+
 
         const dy =
-            coin.y-player.y;
+            coin.y -
+            player.y;
+
 
         if(
-            dx*dx+dy*dy <
-            (coin.r+player.r)**2
+            dx * dx +
+            dy * dy <
+            (
+                coin.r +
+                player.r
+            ) ** 2
         ){
 
             score += 25;
 
             coinSound();
 
-            coins.splice(i,1);
+
+            coins.splice(
+                i,
+                1
+            );
+
 
             continue;
 
         }
 
 
-        if(coin.x < -30){
+        if(
+            coin.x < -30
+        ){
 
-            coins.splice(i,1);
+            coins.splice(
+                i,
+                1
+            );
 
         }
 
     }
 
 
-    /* Powerups */
+    /* ======================
+       POWERUPS
+    ====================== */
 
-    for(let i=powerups.length-1;i>=0;i--){
+    for(
+        let i =
+            powerups.length - 1;
+        i >= 0;
+        i--
+    ){
 
         const power =
             powerups[i];
 
-        power.x -= speed*dt;
+
+        power.x -=
+            speed * dt;
 
 
         const dx =
-            power.x-player.x;
+            power.x -
+            player.x;
+
 
         const dy =
-            power.y-player.y;
+            power.y -
+            player.y;
+
 
         if(
-            dx*dx+dy*dy <
-            (power.size+player.r)**2
+            dx * dx +
+            dy * dy <
+            (
+                power.size +
+                player.r
+            ) ** 2
         ){
 
             invincible = true;
@@ -1152,40 +1718,63 @@ player.y +=
 
             powerSound();
 
-            powerups.splice(i,1);
+
+            powerups.splice(
+                i,
+                1
+            );
+
 
             continue;
 
         }
 
 
-        if(power.x < -50){
+        if(
+            power.x < -50
+        ){
 
-            powerups.splice(i,1);
+            powerups.splice(
+                i,
+                1
+            );
 
         }
 
     }
 
 
-    /* Shield timer */
+    /* ======================
+       SHIELD TIMER
+    ====================== */
 
-    if(invincible && shieldTimer > 0){
+    if(
+        invincible &&
+        shieldTimer > 0
+    ){
 
         shieldTimer -= dt;
 
-        if(shieldTimer <= 0){
+
+        if(
+            shieldTimer <= 0
+        ){
 
             invincible = false;
+
+            shieldTimer = 0;
 
         }
 
     }
 
 
-    /* Time score */
+    /* ======================
+       TIME SCORE
+    ====================== */
 
-    score += dt*5;
+    score +=
+        dt * 5;
 
 
     updateUI();
@@ -1193,14 +1782,15 @@ player.y +=
 }
 
 
-/* ==============================
+/* =====================================================
    UI
-============================== */
+===================================================== */
 
 function updateUI(){
 
     scoreTop.textContent =
         Math.floor(score);
+
 
     bestScoreEl.textContent =
         Math.max(
@@ -1208,10 +1798,12 @@ function updateUI(){
             Math.floor(score)
         );
 
+
     livesTop.textContent =
         lives > 0
         ? "❤️".repeat(lives)
         : "💀";
+
 
     levelTop.textContent =
         level;
@@ -1219,55 +1811,86 @@ function updateUI(){
 }
 
 
-/* ==============================
-   DRAW BACKGROUND
-============================== */
+/* =====================================================
+   BACKGROUND
+===================================================== */
 
 function drawBackground(){
 
-    const w = width();
-    const h = height();
+    const w =
+        width();
+
+    const h =
+        height();
+
 
     const gradient =
         ctx.createLinearGradient(
-            0,0,0,h
+            0,
+            0,
+            0,
+            h
         );
+
+
+    const light =
+        document.body.classList.contains(
+            "light"
+        );
+
 
     gradient.addColorStop(
         0,
-        document.body.classList.contains("light")
+        light
         ? "#bfdbfe"
         : "#071428"
     );
 
+
     gradient.addColorStop(
         1,
-        document.body.classList.contains("light")
+        light
         ? "#eff6ff"
         : "#021122"
     );
 
-    ctx.fillStyle = gradient;
+
+    ctx.fillStyle =
+        gradient;
+
 
     ctx.fillRect(
-        0,0,w,h
+        0,
+        0,
+        w,
+        h
     );
 
 
-    /* Stars */
+    /*
+       Stars
+    */
 
-    if(!document.body.classList.contains("light")){
+    if(!light){
 
         ctx.fillStyle =
             "rgba(255,255,255,.5)";
 
-        for(let i=0;i<35;i++){
+
+        for(
+            let i=0;
+            i<35;
+            i++
+        ){
 
             const x =
-                (i*97)%w;
+                (i * 97) % w;
+
 
             const y =
-                (i*53)%(groundY()-30);
+                (i * 53) %
+                (groundY() - 30);
+
 
             ctx.fillRect(
                 x,
@@ -1283,33 +1906,42 @@ function drawBackground(){
 }
 
 
-/* ==============================
-   DRAW GROUND
-============================== */
+/* =====================================================
+   GROUND
+===================================================== */
 
 function drawGround(){
 
-    const gy = groundY();
+    const gy =
+        groundY();
+
+
+    const light =
+        document.body.classList.contains(
+            "light"
+        );
+
 
     ctx.fillStyle =
-        document.body.classList.contains("light")
+        light
         ? "#94a3b8"
         : "#0f1724";
+
 
     ctx.fillRect(
         0,
         gy,
         width(),
-        height()-gy
+        height() - gy
     );
 
-
-    /* Ground lines */
 
     ctx.strokeStyle =
         "rgba(255,255,255,.08)";
 
+
     ctx.lineWidth = 2;
+
 
     for(
         let x=0;
@@ -1319,15 +1951,18 @@ function drawGround(){
 
         ctx.beginPath();
 
+
         ctx.moveTo(
             x,
-            gy+20
+            gy + 20
         );
 
+
         ctx.lineTo(
-            x+25,
-            gy+20
+            x + 25,
+            gy + 20
         );
+
 
         ctx.stroke();
 
@@ -1336,30 +1971,61 @@ function drawGround(){
 }
 
 
-/* ==============================
-   DRAW PLAYER
-============================== */
+/* =====================================================
+   PLAYER
+===================================================== */
 
 function drawPlayer(){
 
     ctx.save();
 
+
+    /*
+       Shield effect
+    */
+
     if(invincible){
 
         ctx.beginPath();
 
+
         ctx.strokeStyle =
             "#facc15";
 
+
         ctx.lineWidth = 4;
+
 
         ctx.arc(
             player.x,
             player.y,
-            player.r+8,
+            player.r + 9,
             0,
-            Math.PI*2
+            Math.PI * 2
         );
+
+
+        ctx.stroke();
+
+
+        ctx.beginPath();
+
+
+        ctx.strokeStyle =
+            "rgba(250,204,21,.25)";
+
+
+        ctx.lineWidth = 8;
+
+
+        ctx.arc(
+            player.x,
+            player.y,
+            player.r + 14,
+            0,
+            Math.PI * 2
+        );
+
 
         ctx.stroke();
 
@@ -1367,267 +2033,374 @@ function drawPlayer(){
 
 
     /*
-       If player.png exists,
-       it will be used automatically.
+       Use player.png if available.
     */
 
     if(playerImageLoaded){
 
         const size =
-            player.r*2.4;
+            player.r * 2.5;
+
+
+        /*
+           Slight running bounce.
+        */
+
+        const bounce =
+            player.grounded
+            ? Math.sin(
+                performance.now() / 90
+              ) * 2
+            : 0;
+
 
         ctx.drawImage(
             playerImage,
-            player.x-size/2,
-            player.y-size/2,
+            player.x - size / 2,
+            player.y - size / 2 + bounce,
             size,
             size
         );
 
-    }else{
+    }
+    else{
 
-        /* Default player */
+        /*
+           Default character
+           if player.png is missing.
+        */
 
         ctx.beginPath();
 
+
         ctx.fillStyle =
             "#06b6d4";
+
 
         ctx.arc(
             player.x,
             player.y,
             player.r,
             0,
-            Math.PI*2
+            Math.PI * 2
         );
+
 
         ctx.fill();
 
 
-        /* Face */
+        /*
+           Eyes
+        */
 
-        ctx.fillStyle="#fff";
+        ctx.fillStyle =
+            "#fff";
+
 
         ctx.beginPath();
 
-        ctx.arc(
-            player.x-7,
-            player.y-4,
-            4,
-            0,
-            Math.PI*2
-        );
 
         ctx.arc(
-            player.x+7,
-            player.y-4,
+            player.x - 7,
+            player.y - 4,
             4,
             0,
-            Math.PI*2
+            Math.PI * 2
         );
+
+
+        ctx.arc(
+            player.x + 7,
+            player.y - 4,
+            4,
+            0,
+            Math.PI * 2
+        );
+
 
         ctx.fill();
 
 
-        ctx.fillStyle="#082f49";
+        /*
+           Pupils
+        */
+
+        ctx.fillStyle =
+            "#082f49";
+
 
         ctx.beginPath();
 
-        ctx.arc(
-            player.x-7,
-            player.y-4,
-            2,
-            0,
-            Math.PI*2
-        );
 
         ctx.arc(
-            player.x+7,
-            player.y-4,
+            player.x - 7,
+            player.y - 4,
             2,
             0,
-            Math.PI*2
+            Math.PI * 2
         );
+
+
+        ctx.arc(
+            player.x + 7,
+            player.y - 4,
+            2,
+            0,
+            Math.PI * 2
+        );
+
 
         ctx.fill();
 
     }
+
 
     ctx.restore();
 
 }
 
 
-/* ==============================
-   DRAW OBSTACLES
-============================== */
+/* =====================================================
+   OBSTACLES
+===================================================== */
 
 function drawObstacles(){
 
-    obstacles.forEach(ob => {
+    obstacles.forEach(
+        ob => {
 
-        const gradient =
-            ctx.createLinearGradient(
-                ob.x,
-                ob.y,
-                ob.x+ob.w,
-                ob.y+ob.h
+            const gradient =
+                ctx.createLinearGradient(
+                    ob.x,
+                    ob.y,
+                    ob.x + ob.w,
+                    ob.y + ob.h
+                );
+
+
+            gradient.addColorStop(
+                0,
+                "#f87171"
             );
 
-        gradient.addColorStop(
-            0,
-            "#f87171"
-        );
 
-        gradient.addColorStop(
-            1,
-            "#dc2626"
-        );
+            gradient.addColorStop(
+                1,
+                "#dc2626"
+            );
 
-        ctx.fillStyle =
-            gradient;
 
-        ctx.beginPath();
+            ctx.fillStyle =
+                gradient;
 
-        ctx.roundRect(
-            ob.x,
-            ob.y,
-            ob.w,
-            ob.h,
-            6
-        );
 
-        ctx.fill();
+            ctx.beginPath();
 
-    });
+
+            ctx.roundRect(
+                ob.x,
+                ob.y,
+                ob.w,
+                ob.h,
+                6
+            );
+
+
+            ctx.fill();
+
+
+            /*
+               Obstacle shine
+            */
+
+            ctx.fillStyle =
+                "rgba(255,255,255,.15)";
+
+
+            ctx.fillRect(
+                ob.x + 5,
+                ob.y + 5,
+                Math.max(
+                    3,
+                    ob.w * .15
+                ),
+                ob.h - 10
+            );
+
+        }
+    );
 
 }
 
 
-/* ==============================
-   DRAW COINS
-============================== */
+/* =====================================================
+   COINS
+===================================================== */
 
 function drawCoins(){
 
-    coins.forEach(coin => {
+    coins.forEach(
+        coin => {
 
-        ctx.save();
+            ctx.save();
 
-        ctx.translate(
-            coin.x,
-            coin.y
-        );
 
-        ctx.rotate(
-            Math.sin(coin.rotation)
-        );
+            ctx.translate(
+                coin.x,
+                coin.y
+            );
 
-        ctx.fillStyle =
-            "#facc15";
 
-        ctx.beginPath();
+            ctx.rotate(
+                Math.sin(
+                    coin.rotation
+                )
+            );
 
-        ctx.arc(
-            0,
-            0,
-            coin.r,
-            0,
-            Math.PI*2
-        );
 
-        ctx.fill();
+            ctx.shadowBlur =
+                12;
 
-        ctx.fillStyle =
-            "#92400e";
 
-        ctx.font =
-            "bold 13px Arial";
+            ctx.shadowColor =
+                "#facc15";
 
-        ctx.textAlign =
-            "center";
 
-        ctx.textBaseline =
-            "middle";
+            ctx.fillStyle =
+                "#facc15";
 
-        ctx.fillText(
-            "$",
-            0,
-            1
-        );
 
-        ctx.restore();
+            ctx.beginPath();
 
-    });
+
+            ctx.arc(
+                0,
+                0,
+                coin.r,
+                0,
+                Math.PI * 2
+            );
+
+
+            ctx.fill();
+
+
+            ctx.shadowBlur = 0;
+
+
+            ctx.fillStyle =
+                "#92400e";
+
+
+            ctx.font =
+                "bold 13px Arial";
+
+
+            ctx.textAlign =
+                "center";
+
+
+            ctx.textBaseline =
+                "middle";
+
+
+            ctx.fillText(
+                "$",
+                0,
+                1
+            );
+
+
+            ctx.restore();
+
+        }
+    );
 
 }
 
 
-/* ==============================
-   DRAW POWERUPS
-============================== */
+/* =====================================================
+   POWERUPS
+===================================================== */
 
 function drawPowerups(){
 
-    powerups.forEach(power => {
+    powerups.forEach(
+        power => {
 
-        ctx.save();
+            ctx.save();
 
-        ctx.shadowBlur = 15;
 
-        ctx.shadowColor =
-            "#facc15";
+            ctx.shadowBlur =
+                15;
 
-        ctx.fillStyle =
-            "#facc15";
 
-        ctx.beginPath();
+            ctx.shadowColor =
+                "#facc15";
 
-        ctx.arc(
-            power.x,
-            power.y,
-            power.size,
-            0,
-            Math.PI*2
-        );
 
-        ctx.fill();
+            ctx.fillStyle =
+                "#facc15";
 
-        ctx.shadowBlur = 0;
 
-        ctx.fillStyle =
-            "#7c2d12";
+            ctx.beginPath();
 
-        ctx.font =
-            "bold 18px Arial";
 
-        ctx.textAlign =
-            "center";
+            ctx.arc(
+                power.x,
+                power.y,
+                power.size,
+                0,
+                Math.PI * 2
+            );
 
-        ctx.textBaseline =
-            "middle";
 
-        ctx.fillText(
-            "★",
-            power.x,
-            power.y
-        );
+            ctx.fill();
 
-        ctx.restore();
 
-    });
+            ctx.shadowBlur = 0;
+
+
+            ctx.fillStyle =
+                "#7c2d12";
+
+
+            ctx.font =
+                "bold 18px Arial";
+
+
+            ctx.textAlign =
+                "center";
+
+
+            ctx.textBaseline =
+                "middle";
+
+
+            ctx.fillText(
+                "★",
+                power.x,
+                power.y
+            );
+
+
+            ctx.restore();
+
+        }
+    );
 
 }
 
 
-/* ==============================
+/* =====================================================
    HUD
-============================== */
+===================================================== */
 
 function drawHUD(){
 
     ctx.fillStyle =
         "rgba(0,0,0,.25)";
+
 
     ctx.fillRect(
         12,
@@ -1636,23 +2409,30 @@ function drawHUD(){
         42
     );
 
+
     ctx.fillStyle =
         "#fff";
+
 
     ctx.font =
         "bold 14px system-ui";
 
+
     ctx.fillText(
-        "Score: " + Math.floor(score),
+        "Score: " +
+        Math.floor(score),
         22,
         30
     );
 
+
     ctx.font =
         "12px system-ui";
 
+
     ctx.fillText(
-        "Level: " + level,
+        "Level: " +
+        level,
         22,
         47
     );
@@ -1663,14 +2443,18 @@ function drawHUD(){
         ctx.fillStyle =
             "#facc15";
 
+
         ctx.font =
             "bold 14px system-ui";
 
+
         ctx.fillText(
             "🛡 SHIELD " +
-            Math.ceil(shieldTimer) +
+            Math.ceil(
+                shieldTimer
+            ) +
             "s",
-            width()-105,
+            width() - 115,
             30
         );
 
@@ -1679,14 +2463,18 @@ function drawHUD(){
 }
 
 
-/* ==============================
+/* =====================================================
    RENDER
-============================== */
+===================================================== */
 
 function render(){
 
-    const w = width();
-    const h = height();
+    const w =
+        width();
+
+    const h =
+        height();
+
 
     ctx.clearRect(
         0,
@@ -1694,6 +2482,7 @@ function render(){
         w,
         h
     );
+
 
     drawBackground();
 
@@ -1712,22 +2501,29 @@ function render(){
 }
 
 
-/* ==============================
+/* =====================================================
    GAME LOOP
-============================== */
+===================================================== */
 
 function loop(time){
 
     if(!running)
         return;
 
+
     if(paused){
 
-        lastTime = time;
+        lastTime =
+            time;
 
-        requestAnimationFrame(loop);
 
         render();
+
+
+        requestAnimationFrame(
+            loop
+        );
+
 
         return;
 
@@ -1735,7 +2531,14 @@ function loop(time){
 
 
     let dt =
-        (time-lastTime)/1000;
+        (time - lastTime) /
+        1000;
+
+
+    /*
+       Prevent giant physics jumps
+       after lag.
+    */
 
     dt =
         Math.min(
@@ -1743,7 +2546,9 @@ function loop(time){
             .05
         );
 
-    lastTime = time;
+
+    lastTime =
+        time;
 
 
     update(dt);
@@ -1751,14 +2556,16 @@ function loop(time){
     render();
 
 
-    requestAnimationFrame(loop);
+    requestAnimationFrame(
+        loop
+    );
 
 }
 
 
-/* ==============================
+/* =====================================================
    THEME
-============================== */
+===================================================== */
 
 function toggleTheme(){
 
@@ -1766,25 +2573,32 @@ function toggleTheme(){
         "light"
     );
 
+
     const light =
         document.body.classList.contains(
             "light"
         );
 
+
     localStorage.setItem(
         "universalDodgeTheme",
-        light ? "light" : "dark"
+        light
+        ? "light"
+        : "dark"
     );
+
 
     themeBtn.textContent =
         light
         ? "☀️ Theme"
         : "🌙 Theme";
 
+
     menuTheme.textContent =
         light
         ? "🌙 Dark Mode"
         : "☀️ Light Mode";
+
 
     render();
 
@@ -1796,7 +2610,10 @@ const savedTheme =
         "universalDodgeTheme"
     );
 
-if(savedTheme === "light"){
+
+if(
+    savedTheme === "light"
+){
 
     document.body.classList.add(
         "light"
@@ -1805,51 +2622,138 @@ if(savedTheme === "light"){
 }
 
 
-/* ==============================
-   CONTROLS
-============================== */
+/* =====================================================
+   CANVAS MOUSE / TOUCH CONTROLS
+===================================================== */
+
+/*
+   POINTER DOWN = start holding jump
+*/
 
 canvas.addEventListener(
     "pointerdown",
-    e => {
+    event => {
 
-        e.preventDefault();
+        event.preventDefault();
 
-        jump();
+        startJump();
+
+    }
+);
+
+
+/*
+   POINTER UP = release jump
+*/
+
+canvas.addEventListener(
+    "pointerup",
+    event => {
+
+        event.preventDefault();
+
+        releaseJump();
+
+    }
+);
+
+
+canvas.addEventListener(
+    "pointercancel",
+    event => {
+
+        event.preventDefault();
+
+        releaseJump();
+
+    }
+);
+
+
+canvas.addEventListener(
+    "pointerleave",
+    event => {
+
+        releaseJump();
+
+    }
+);
+
+
+/* =====================================================
+   MOBILE JUMP BUTTON
+===================================================== */
+
+mobileJump.addEventListener(
+    "pointerdown",
+    event => {
+
+        event.preventDefault();
+
+        startJump();
 
     }
 );
 
 
 mobileJump.addEventListener(
-    "pointerdown",
-    e => {
+    "pointerup",
+    event => {
 
-        e.preventDefault();
+        event.preventDefault();
 
-        jump();
+        releaseJump();
 
     }
 );
 
 
+mobileJump.addEventListener(
+    "pointercancel",
+    event => {
+
+        event.preventDefault();
+
+        releaseJump();
+
+    }
+);
+
+
+/* =====================================================
+   KEYBOARD
+===================================================== */
+
 window.addEventListener(
     "keydown",
-    e => {
+    event => {
 
         if(
-            e.code === "Space" ||
-            e.code === "ArrowUp"
+            event.code === "Space" ||
+            event.code === "ArrowUp"
         ){
 
-            e.preventDefault();
+            event.preventDefault();
 
-            jump();
+
+            /*
+               Do not repeatedly
+               restart the jump while
+               the key is held.
+            */
+
+            if(!event.repeat){
+
+                startJump();
+
+            }
 
         }
 
 
-        if(e.code === "KeyP"){
+        if(
+            event.code === "KeyP"
+        ){
 
             pauseGame();
 
@@ -1858,6 +2762,29 @@ window.addEventListener(
     }
 );
 
+
+window.addEventListener(
+    "keyup",
+    event => {
+
+        if(
+            event.code === "Space" ||
+            event.code === "ArrowUp"
+        ){
+
+            event.preventDefault();
+
+            releaseJump();
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   BUTTONS
+===================================================== */
 
 startBtn.addEventListener(
     "click",
@@ -1895,9 +2822,9 @@ menuTheme.addEventListener(
 );
 
 
-/* ==============================
+/* =====================================================
    TAB VISIBILITY
-============================== */
+===================================================== */
 
 document.addEventListener(
     "visibilitychange",
@@ -1908,6 +2835,8 @@ document.addEventListener(
             if(running){
 
                 paused = true;
+
+                jumpHeld = false;
 
                 pauseBtn.textContent =
                     "▶ Resume";
@@ -1920,16 +2849,18 @@ document.addEventListener(
 );
 
 
-/* ==============================
-   INITIAL SCREEN
-============================== */
+/* =====================================================
+   INITIALIZE
+===================================================== */
 
 bestScoreEl.textContent =
     bestScore;
 
+
 menuScore.textContent =
     "🏆 Best Score: " +
     bestScore;
+
 
 resetGame();
 
@@ -1937,7 +2868,6 @@ render();
 
 
 })();
-
 </script>
 
 </body>
